@@ -1,4 +1,5 @@
 import {
+  FIXTURE_IMAGE_PATHS,
   SMOKE_SET,
   bootstrapApp,
   importAndOpenPage,
@@ -136,4 +137,41 @@ test('cancel discards reorder changes', async ({ page }) => {
     els.map((el) => el.querySelector('img')?.src ?? ''),
   )
   expect(unchangedOrder).toEqual(originalOrder)
+})
+
+test('drag from second row reorders correctly', async ({ page }) => {
+  await importAndOpenPage(page, FIXTURE_IMAGE_PATHS)
+  await waitForNavigatorPageCount(page, FIXTURE_IMAGE_PATHS.length)
+
+  const panel = page.getByTestId(selectors.navigator.panel)
+  const navigatorPages = panel.locator('[data-page-index]')
+  await expect(navigatorPages).toHaveCount(FIXTURE_IMAGE_PATHS.length)
+
+  const originalOrder = await navigatorPages.evaluateAll((els) =>
+    els.map((el) => el.querySelector('img')?.src ?? ''),
+  )
+
+  const button = page.getByTestId(selectors.navigator.pageManagerButton)
+  await button.click()
+  const dialog = page.getByTestId(selectors.pageManager.dialog)
+  await expect(dialog).toBeVisible()
+
+  const lastCard = page.getByTestId(
+    selectors.pageManager.card(FIXTURE_IMAGE_PATHS.length - 1),
+  )
+  await lastCard.scrollIntoViewIfNeeded()
+
+  const firstCard = page.getByTestId(selectors.pageManager.card(0))
+  await dragCard(page, lastCard, firstCard)
+
+  const save = page.getByTestId(selectors.pageManager.save)
+  await expect(save).toBeEnabled()
+  await save.click()
+
+  await expect(dialog).not.toBeVisible()
+
+  const newOrder = await navigatorPages.evaluateAll((els) =>
+    els.map((el) => el.querySelector('img')?.src ?? ''),
+  )
+  expect(newOrder).not.toEqual(originalOrder)
 })
