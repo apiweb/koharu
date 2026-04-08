@@ -437,10 +437,7 @@ mod tests {
 
     #[test]
     fn assign_missing_orders_skips_non_zero() {
-        let mut pages = vec![
-            make_page("a", "alpha", 3),
-            make_page("b", "beta", 0),
-        ];
+        let mut pages = vec![make_page("a", "alpha", 3), make_page("b", "beta", 0)];
         assign_missing_orders(&mut pages, 10);
         assert_eq!(pages.iter().find(|p| p.id == "a").unwrap().order, 3);
         assert_eq!(pages.iter().find(|p| p.id == "b").unwrap().order, 10);
@@ -475,10 +472,7 @@ mod tests {
     fn list_documents_uses_name_as_tiebreaker() {
         let project = Project {
             name: "test".to_string(),
-            pages: vec![
-                make_page("b", "beta", 1),
-                make_page("a", "alpha", 1),
-            ],
+            pages: vec![make_page("b", "beta", 1), make_page("a", "alpha", 1)],
         };
         let result = list_documents(&project);
         assert_eq!(result[0].name, "alpha");
@@ -530,10 +524,8 @@ mod tests {
 
     #[tokio::test]
     async fn reorder_pages_rejects_unknown_id() {
-        let (storage, _dir) = open_test_storage(vec![
-            make_page("a", "alpha", 0),
-            make_page("b", "beta", 1),
-        ]);
+        let (storage, _dir) =
+            open_test_storage(vec![make_page("a", "alpha", 0), make_page("b", "beta", 1)]);
         let err = storage
             .reorder_pages(&["a".into(), "unknown".into()])
             .await
@@ -543,14 +535,9 @@ mod tests {
 
     #[tokio::test]
     async fn reorder_pages_rejects_wrong_count() {
-        let (storage, _dir) = open_test_storage(vec![
-            make_page("a", "alpha", 0),
-            make_page("b", "beta", 1),
-        ]);
-        let err = storage
-            .reorder_pages(&["a".into()])
-            .await
-            .unwrap_err();
+        let (storage, _dir) =
+            open_test_storage(vec![make_page("a", "alpha", 0), make_page("b", "beta", 1)]);
+        let err = storage.reorder_pages(&["a".into()]).await.unwrap_err();
         assert!(err.to_string().contains("does not match page count"));
     }
 
@@ -564,10 +551,7 @@ mod tests {
         let blobs = BlobStore::new(&blobs_root).unwrap();
         let project = Project {
             name: "test".to_string(),
-            pages: vec![
-                make_page("a", "alpha", 0),
-                make_page("b", "beta", 1),
-            ],
+            pages: vec![make_page("a", "alpha", 0), make_page("b", "beta", 1)],
         };
         let content = toml::to_string_pretty(&project).unwrap();
         std::fs::write(projects_root.join("test.toml"), &content).unwrap();
@@ -597,10 +581,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let project = Project {
             name: "test".to_string(),
-            pages: vec![
-                make_page("b", "beta", 0),
-                make_page("a", "alpha", 0),
-            ],
+            pages: vec![make_page("b", "beta", 0), make_page("a", "alpha", 0)],
         };
         let content = toml::to_string_pretty(&project).unwrap();
         std::fs::write(dir.path().join("test.toml"), content).unwrap();
@@ -616,10 +597,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let project = Project {
             name: "test".to_string(),
-            pages: vec![
-                make_page("a", "alpha", 5),
-                make_page("b", "beta", 0),
-            ],
+            pages: vec![make_page("a", "alpha", 5), make_page("b", "beta", 0)],
         };
         let content = toml::to_string_pretty(&project).unwrap();
         std::fs::write(dir.path().join("test.toml"), content).unwrap();
