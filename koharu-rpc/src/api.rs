@@ -544,6 +544,7 @@ async fn get_document_thumbnail(
     path = "/documents",
     operation_id = "importDocuments",
     tag = "documents",
+    description = "Import images or comic book archives (CBZ, ZIP, CB7, 7z). Archives are extracted automatically.",
     params(ImportQuery),
     request_body(content_type = "multipart/form-data", content = inline(MultipartUpload)),
     responses(

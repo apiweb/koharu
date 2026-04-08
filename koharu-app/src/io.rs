@@ -6,6 +6,7 @@ use koharu_core::commands::{
 use rfd::FileDialog;
 
 use crate::AppResources;
+use crate::archive::expand_archives;
 use crate::utils::{encode_image_dynamic, mime_from_ext};
 
 pub async fn app_version(state: AppResources) -> anyhow::Result<String> {
@@ -68,7 +69,8 @@ pub async fn open_documents(
         anyhow::bail!("No files uploaded");
     }
 
-    let pages = state.storage.import_files(payload.files, true).await?;
+    let files = expand_archives(payload.files)?;
+    let pages = state.storage.import_files(files, true).await?;
     Ok(pages.len())
 }
 
@@ -81,7 +83,8 @@ pub async fn add_documents(
         anyhow::bail!("No files uploaded");
     }
 
-    let _new_pages = state.storage.import_files(payload.files, false).await?;
+    let files = expand_archives(payload.files)?;
+    let _new_pages = state.storage.import_files(files, false).await?;
     Ok(state.storage.page_count().await)
 }
 

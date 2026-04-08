@@ -277,7 +277,7 @@ impl Storage {
         project.pages.extend(pages);
         project
             .pages
-            .sort_by(|a, b| a.name.cmp(&b.name).then_with(|| a.id.cmp(&b.id)));
+            .sort_by(|a, b| natord::compare(&a.name, &b.name).then_with(|| a.id.cmp(&b.id)));
         self.persist(&project)?;
         Ok(imported)
     }
@@ -305,7 +305,7 @@ fn list_documents(project: &Project) -> Vec<DocumentSummary> {
             text_block_count: doc.text_blocks.len(),
         })
         .collect();
-    entries.sort_by(|a, b| a.name.cmp(&b.name).then_with(|| a.id.cmp(&b.id)));
+    entries.sort_by(|a, b| natord::compare(&a.name, &b.name).then_with(|| a.id.cmp(&b.id)));
     entries
 }
 

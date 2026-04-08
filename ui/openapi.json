@@ -299,6 +299,7 @@
       "post": {
         "tags": ["documents"],
         "operationId": "importDocuments",
+        "description": "Import images or comic book archives (CBZ, ZIP, CB7, 7z). Archives are extracted automatically.",
         "parameters": [
           {
             "name": "mode",
