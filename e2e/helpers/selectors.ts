@@ -13,6 +13,13 @@ export const selectors = {
   navigator: {
     panel: 'navigator-panel',
     page: (index: number) => `navigator-page-${index}`,
+    pageManagerButton: 'navigator-manage-pages',
+  },
+  pageManager: {
+    dialog: 'page-manager-dialog',
+    grid: 'page-manager-grid',
+    card: (index: number) => `page-manager-card-${index}`,
+    save: 'page-manager-save',
   },
   workspace: {
     viewport: 'workspace-viewport',
