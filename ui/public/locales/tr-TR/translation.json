@@ -172,7 +172,9 @@
     "fontColorLabel": "Yazı rengi",
     "fontScopeGlobal": "Genel",
     "fontScopeBlock": "Blok bazında",
-    "fontScopeBlockIndex": "Blok {{index}}"
+    "fontScopeBlockIndex": "Blok {{index}}",
+    "copyFormatting": "Biçimlendirmeyi kopyala",
+    "pasteFormatting": "Biçimlendirmeyi yapıştır"
   },
   "textBlocks": {
     "emptyPrompt": "Metin bloklarını görmek için bir görsel açın.",

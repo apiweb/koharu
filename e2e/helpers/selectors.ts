@@ -75,6 +75,9 @@ export const selectors = {
     renderColorTrigger: 'render-color-trigger',
     renderColorPicker: 'render-color-picker',
     renderColorSwatch: 'render-color-swatch',
+    renderCopyStyle: 'render-copy-style',
+    renderPasteStyle: 'render-paste-style',
+    renderScopeIndicator: 'render-scope-indicator',
   },
   layers: {
     rendered: 'layer-rendered',

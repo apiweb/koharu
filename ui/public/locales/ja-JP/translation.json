@@ -172,7 +172,9 @@
     "effectBold": "太字",
     "effectBorder": "縁取り",
     "strokeColorLabel": "縁取りの色",
-    "strokeWidthLabel": "縁取りの太さ"
+    "strokeWidthLabel": "縁取りの太さ",
+    "copyFormatting": "書式をコピー",
+    "pasteFormatting": "書式を貼り付け"
   },
   "textBlocks": {
     "emptyPrompt": "画像を開くとテキストブロックが表示されます。",

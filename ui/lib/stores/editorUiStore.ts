@@ -1,8 +1,8 @@
 'use client'
 
-import { create } from 'zustand'
-import { RenderEffect, RenderStroke, ToolMode } from '@/types'
 import type { LlmTarget } from '@/lib/api/schemas'
+import { RenderEffect, RenderStroke, TextStyle, ToolMode } from '@/types'
+import { create } from 'zustand'
 
 // ---------------------------------------------------------------------------
 // Error auto-dismiss timer
@@ -52,6 +52,10 @@ type EditorUiState = {
   setRenderEffect: (effect: RenderEffect) => void
   setRenderStroke: (stroke?: RenderStroke) => void
 
+  // --- style clipboard ---
+  copiedStyle?: TextStyle
+  setCopiedStyle: (style?: TextStyle) => void
+
   // --- llm ui ---
   selectedTarget?: LlmTarget
   selectedLanguage?: string
@@ -86,6 +90,9 @@ const initialState = {
     bold: false,
   } as RenderEffect,
   renderStroke: undefined as RenderStroke | undefined,
+
+  // style clipboard
+  copiedStyle: undefined as TextStyle | undefined,
 
   // llm ui
   selectedTarget: undefined as LlmTarget | undefined,
@@ -158,6 +165,9 @@ export const useEditorUiStore = create<EditorUiState>((set, get) => ({
   setAutoFitEnabled: (enabled) => set({ autoFitEnabled: enabled }),
   setRenderEffect: (effect) => set({ renderEffect: effect }),
   setRenderStroke: (stroke) => set({ renderStroke: stroke }),
+
+  // --- style clipboard actions ---
+  setCopiedStyle: (style) => set({ copiedStyle: style }),
 
   // --- llm ui actions ---
   setSelectedTarget: (selectedTarget) => set({ selectedTarget }),

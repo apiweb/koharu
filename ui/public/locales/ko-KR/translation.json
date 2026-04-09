@@ -172,7 +172,9 @@
     "fontColorLabel": "글꼴 색상",
     "fontScopeGlobal": "전역",
     "fontScopeBlock": "블록별",
-    "fontScopeBlockIndex": "블록 {{index}}"
+    "fontScopeBlockIndex": "블록 {{index}}",
+    "copyFormatting": "서식 복사",
+    "pasteFormatting": "서식 붙여넣기"
   },
   "textBlocks": {
     "emptyPrompt": "텍스트 블록을 보려면 이미지를 열어주세요.",

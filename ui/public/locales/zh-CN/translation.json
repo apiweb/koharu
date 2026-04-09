@@ -172,7 +172,9 @@
     "effectBold": "粗体",
     "effectBorder": "描边",
     "strokeColorLabel": "描边颜色",
-    "strokeWidthLabel": "描边宽度"
+    "strokeWidthLabel": "描边宽度",
+    "copyFormatting": "复制格式",
+    "pasteFormatting": "粘贴格式"
   },
   "textBlocks": {
     "emptyPrompt": "打开图像以查看文本块。",

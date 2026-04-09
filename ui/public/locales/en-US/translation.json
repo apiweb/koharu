@@ -174,7 +174,9 @@
     "fontColorLabel": "Font color",
     "fontScopeGlobal": "Global",
     "fontScopeBlock": "Per block",
-    "fontScopeBlockIndex": "Block {{index}}"
+    "fontScopeBlockIndex": "Block {{index}}",
+    "copyFormatting": "Copy formatting",
+    "pasteFormatting": "Paste formatting"
   },
   "textBlocks": {
     "emptyPrompt": "Open an image to see text blocks.",

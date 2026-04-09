@@ -1,12 +1,16 @@
 'use client'
 
-import { type ComponentType, useMemo } from 'react'
+import { type ComponentType, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useHotkeys } from 'react-hotkeys-hook'
 import {
   AlignCenterIcon,
   AlignLeftIcon,
   AlignRightIcon,
   BoldIcon,
+  CheckIcon,
+  ClipboardPasteIcon,
+  CopyIcon,
   ItalicIcon,
   MinusIcon,
   PlusIcon,
@@ -64,6 +68,9 @@ const MAX_STROKE_WIDTH = 24
 const STROKE_WIDTH_STEP = 0.1
 const LATIN_ONLY_PATTERN =
   /^[\p{Script=Latin}\p{Script=Common}\p{Script=Inherited}]*$/u
+
+const IS_MAC =
+  typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent)
 
 const clampByte = (value: number) =>
   Math.max(0, Math.min(255, Math.round(value)))
@@ -282,6 +289,74 @@ export function RenderControlsPanel() {
     selectedBlockIndex !== undefined
       ? 'border-primary/20 bg-primary/10 text-primary'
       : 'border-border/60 bg-muted text-muted-foreground'
+  const copiedStyle = useEditorUiStore((state) => state.copiedStyle)
+  const setCopiedStyle = useEditorUiStore((state) => state.setCopiedStyle)
+  const canCopy = selectedBlockIndex !== undefined
+  const canPaste = copiedStyle !== undefined && hasBlocks
+  const copyShortcut = IS_MAC ? '⌘⌥C' : 'Ctrl+Alt+C'
+  const pasteShortcut = IS_MAC ? '⌘⌥V' : 'Ctrl+Alt+V'
+  const copyFormattingLabel = `${t('render.copyFormatting')} (${copyShortcut})`
+  const pasteFormattingLabel = `${t('render.pasteFormatting')} (${pasteShortcut})`
+
+  const [showCopyConfirm, setShowCopyConfirm] = useState(false)
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    }
+  }, [])
+
+  const handleCopyFormatting = useCallback(() => {
+    if (selectedBlockIndex === undefined) return
+    setCopiedStyle({
+      fontFamilies: selectedBlock?.style?.fontFamilies ?? [],
+      fontSize: currentFontSize,
+      color: currentColor,
+      effect: currentEffect,
+      stroke: currentStroke,
+      textAlign: currentTextAlign,
+    })
+    setShowCopyConfirm(true)
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    copyTimerRef.current = setTimeout(() => setShowCopyConfirm(false), 2000)
+  }, [
+    selectedBlockIndex,
+    selectedBlock?.style?.fontFamilies,
+    currentFontSize,
+    currentColor,
+    currentEffect,
+    currentStroke,
+    currentTextAlign,
+    setCopiedStyle,
+  ])
+
+  const handlePasteFormatting = useCallback(() => {
+    if (!copiedStyle || !hasBlocks) return
+    if (selectedBlockIndex !== undefined) {
+      void replaceBlock(selectedBlockIndex, { style: { ...copiedStyle } })
+    } else {
+      const nextBlocks = textBlocks.map((block) => ({
+        ...block,
+        style: { ...copiedStyle },
+      }))
+      void updateTextBlocks(nextBlocks)
+    }
+  }, [selectedBlockIndex, copiedStyle, hasBlocks, textBlocks, replaceBlock, updateTextBlocks])
+
+  useHotkeys(
+    'mod+alt+c',
+    handleCopyFormatting,
+    { enabled: canCopy },
+    [handleCopyFormatting],
+  )
+
+  useHotkeys(
+    'mod+alt+v',
+    handlePasteFormatting,
+    { enabled: canPaste },
+    [handlePasteFormatting],
+  )
 
   const buildStyle = (
     block:
@@ -390,8 +465,58 @@ export function RenderControlsPanel() {
 
   return (
     <div className='flex w-full min-w-0 flex-col gap-2'>
-      {/* Scope indicator */}
-      <div className='flex items-center justify-end'>
+      {/* Scope indicator + copy/paste */}
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-1'>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant='outline'
+                size='icon-sm'
+                aria-label={copyFormattingLabel}
+                data-testid='render-copy-style'
+                data-copied={showCopyConfirm || undefined}
+                disabled={!canCopy}
+                className={cn(
+                  'size-7 shrink-0',
+                  showCopyConfirm && 'border-green-500/40 text-green-600',
+                )}
+                onClick={handleCopyFormatting}
+              >
+                {showCopyConfirm ? (
+                  <CheckIcon className='size-3.5' />
+                ) : (
+                  <CopyIcon className='size-3.5' />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='bottom' sideOffset={4}>
+              {copyFormattingLabel}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant='outline'
+                size='icon-sm'
+                aria-label={pasteFormattingLabel}
+                data-testid='render-paste-style'
+                disabled={!canPaste}
+                className={cn(
+                  'size-7 shrink-0',
+                  copiedStyle &&
+                    'border-primary/40 text-primary hover:bg-primary/10',
+                )}
+                onClick={handlePasteFormatting}
+              >
+                <ClipboardPasteIcon className='size-3.5' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='bottom' sideOffset={4}>
+              {pasteFormattingLabel}
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <span
           data-testid='render-scope-indicator'
           className={cn(

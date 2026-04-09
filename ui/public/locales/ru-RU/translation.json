@@ -172,7 +172,9 @@
     "effectBold": "Жирный",
     "effectBorder": "Обводка",
     "strokeColorLabel": "Цвет обводки",
-    "strokeWidthLabel": "Толщина обводки"
+    "strokeWidthLabel": "Толщина обводки",
+    "copyFormatting": "Копировать форматирование",
+    "pasteFormatting": "Вставить форматирование"
   },
   "textBlocks": {
     "emptyPrompt": "Откройте изображение, чтобы увидеть текстовые блоки.",
