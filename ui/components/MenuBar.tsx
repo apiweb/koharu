@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { MinusIcon, SquareIcon, XIcon, CopyIcon } from 'lucide-react'
-import { isTauri } from '@/lib/backend'
+import { isTauri, openExternalUrl } from '@/lib/backend'
 import { useTranslation } from 'react-i18next'
 
 const isMacOS = () =>
@@ -56,15 +56,12 @@ type MenuSection = {
   triggerTestId?: string
 }
 
-const openExternal = (url: string) => {
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
-
 export function MenuBar() {
   const { t } = useTranslation()
   const { send } = useProcessing()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<TabId>('appearance')
+  const hasDocument = useEditorUiStore((state) => state.currentDocumentId !== null)
 
   const buildPipelineRequest = (documentId?: string): PipelineJobRequest => {
     const { selectedTarget, selectedLanguage, renderEffect, renderStroke } =
@@ -120,6 +117,7 @@ export function MenuBar() {
           format: 'webp',
           params: { layer: 'rendered' },
         }),
+      disabled: !hasDocument,
       testId: 'menu-file-export',
     },
     {
@@ -130,6 +128,7 @@ export function MenuBar() {
           documentId: requireDocumentId(),
           format: 'psd',
         }),
+      disabled: !hasDocument,
       testId: 'menu-file-export-psd',
     },
     {
@@ -165,6 +164,7 @@ export function MenuBar() {
               request: buildPipelineRequest(documentId),
             })
           },
+          disabled: !hasDocument,
           testId: 'menu-process-current',
         },
         {
@@ -173,6 +173,7 @@ export function MenuBar() {
             const documentId = requireDocumentId()
             send({ type: 'START_INPAINT', documentId })
           },
+          disabled: !hasDocument,
           testId: 'menu-process-rerender',
         },
         {
@@ -188,11 +189,11 @@ export function MenuBar() {
   const helpMenuItems: MenuItem[] = [
     {
       label: t('menu.discord'),
-      onSelect: () => openExternal('https://discord.gg/mHvHkxGnUY'),
+      onSelect: () => openExternalUrl('https://discord.gg/mHvHkxGnUY'),
     },
     {
       label: t('menu.github'),
-      onSelect: () => openExternal('https://github.com/mayocream/koharu'),
+      onSelect: () => openExternalUrl('https://github.com/mayocream/koharu'),
     },
   ]
 
