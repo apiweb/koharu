@@ -1,6 +1,7 @@
 import {
   FIXTURE_IMAGE_PATHS,
   SMOKE_SET,
+  addImages,
   bootstrapApp,
   importAndOpenPage,
   waitForNavigatorPageCount,
@@ -174,4 +175,84 @@ test('drag from second row reorders correctly', async ({ page }) => {
     els.map((el) => el.querySelector('img')?.src ?? ''),
   )
   expect(newOrder).not.toEqual(originalOrder)
+})
+
+test('reordered pages keep their order after adding new images', async ({
+  page,
+}) => {
+  // ── Step 1: Import Image A and Image B ────────────────────────
+  const [imageA, imageB] = FIXTURE_IMAGE_PATHS.slice(0, 2)
+  await importAndOpenPage(page, [imageA, imageB])
+  await waitForNavigatorPageCount(page, 2)
+
+  const panel = page.getByTestId(selectors.navigator.panel)
+  const navigatorPages = panel.locator('[data-page-index]')
+
+  const [srcA, srcB] = await navigatorPages.evaluateAll((els) =>
+    els.map((el) => el.querySelector('img')?.src ?? ''),
+  )
+
+  // ── Step 2: Open Page Manager, reorder to [B, A] ─────────────
+  await page.getByTestId(selectors.navigator.pageManagerButton).click()
+  const dialog = page.getByTestId(selectors.pageManager.dialog)
+  await expect(dialog).toBeVisible()
+
+  await dragCard(
+    page,
+    page.getByTestId(selectors.pageManager.card(0)),
+    page.getByTestId(selectors.pageManager.card(1)),
+  )
+  const save = page.getByTestId(selectors.pageManager.save)
+  await expect(save).toBeEnabled()
+  await save.click()
+  await expect(dialog).not.toBeVisible()
+
+  // Verify, navigator shows [B, A]
+  let order = await navigatorPages.evaluateAll((els) =>
+    els.map((el) => el.querySelector('img')?.src ?? ''),
+  )
+  expect(order).toEqual([srcB, srcA])
+
+  // ── Step 3: Add Image C via "Add File" ────────────────────────
+  const [imageC] = FIXTURE_IMAGE_PATHS.slice(2, 3)
+  await addImages(page, [imageC])
+  await waitForNavigatorPageCount(page, 3)
+
+  order = await navigatorPages.evaluateAll((els) =>
+    els.map((el) => el.querySelector('img')?.src ?? ''),
+  )
+  expect(order[0]).toBe(srcB)
+  expect(order[1]).toBe(srcA)
+  const srcC = order[2]
+
+  // ── Step 4: Open Page Manager, move C to first position ───────
+  await page.getByTestId(selectors.navigator.pageManagerButton).click()
+  await expect(dialog).toBeVisible()
+
+  await dragCard(
+    page,
+    page.getByTestId(selectors.pageManager.card(2)),
+    page.getByTestId(selectors.pageManager.card(0)),
+  )
+  await expect(save).toBeEnabled()
+  await save.click()
+  await expect(dialog).not.toBeVisible()
+
+  // Verify, navigator shows [C, B, A]
+  order = await navigatorPages.evaluateAll((els) =>
+    els.map((el) => el.querySelector('img')?.src ?? ''),
+  )
+  expect(order).toEqual([srcC, srcB, srcA])
+
+  // ── Step 5: Add Image D via "Add File" ────────────────────────
+  const [imageD] = FIXTURE_IMAGE_PATHS.slice(3, 4)
+  await addImages(page, [imageD])
+  await waitForNavigatorPageCount(page, 4)
+
+  order = await navigatorPages.evaluateAll((els) =>
+    els.map((el) => el.querySelector('img')?.src ?? ''),
+  )
+  const srcD = order[3]
+
+  expect(order).toEqual([srcC, srcB, srcA, srcD])
 })

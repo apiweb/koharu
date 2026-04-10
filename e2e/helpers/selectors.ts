@@ -2,6 +2,7 @@ export const selectors = {
   menu: {
     fileTrigger: 'menu-file-trigger',
     fileOpen: 'menu-file-open',
+    fileAdd: 'menu-file-add',
     fileExport: 'menu-file-export',
     fileExportAllInpainted: 'menu-file-export-all-inpainted',
     fileExportAllRendered: 'menu-file-export-all-rendered',
