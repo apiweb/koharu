@@ -611,10 +611,8 @@ mod tests {
 
     #[tokio::test]
     async fn reorder_first_page_not_corrupted_by_new_import() {
-        let (storage, _dir) = open_test_storage(vec![
-            make_page("a", "alpha", 1),
-            make_page("b", "beta", 2),
-        ]);
+        let (storage, _dir) =
+            open_test_storage(vec![make_page("a", "alpha", 1), make_page("b", "beta", 2)]);
 
         // Reorder: B first, A second
         storage
@@ -659,10 +657,8 @@ mod tests {
 
     #[tokio::test]
     async fn multiple_reorders_and_imports_preserve_order() {
-        let (storage, _dir) = open_test_storage(vec![
-            make_page("a", "alpha", 1),
-            make_page("b", "beta", 2),
-        ]);
+        let (storage, _dir) =
+            open_test_storage(vec![make_page("a", "alpha", 1), make_page("b", "beta", 2)]);
 
         // Reorder to [B, A]
         storage
