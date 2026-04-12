@@ -361,5 +361,9 @@
     },
     "close": "關閉",
     "retry": "重試"
+  },
+  "dropZone": {
+    "noValidFiles": "未找到支援的圖片檔案。支援的格式：PNG、JPG、JPEG、WebP。",
+    "noFilePaths": "無法匯入拖入的圖片。請先將其儲存到磁碟，然後再拖放檔案。"
   }
 }

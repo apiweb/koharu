@@ -361,5 +361,9 @@
     },
     "close": "닫기",
     "retry": "다시 시도"
+  },
+  "dropZone": {
+    "noValidFiles": "지원되는 이미지 파일을 찾을 수 없습니다. 허용 형식: PNG, JPG, JPEG, WebP.",
+    "noFilePaths": "드래그한 이미지를 가져올 수 없습니다. 먼저 디스크에 저장한 후 파일을 드래그해 주세요."
   }
 }

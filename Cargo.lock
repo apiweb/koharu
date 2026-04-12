@@ -4396,6 +4396,7 @@ dependencies = [
  "petgraph",
  "petname",
  "rayon",
+ "reqwest 0.13.2",
  "reqwest-middleware",
  "rfd",
  "secrecy",

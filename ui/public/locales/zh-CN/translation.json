@@ -361,5 +361,9 @@
     },
     "close": "关闭",
     "retry": "重试"
+  },
+  "dropZone": {
+    "noValidFiles": "未找到支持的图片文件。支持的格式：PNG、JPG、JPEG、WebP。",
+    "noFilePaths": "无法导入拖入的图片。请先将其保存到磁盘，然后再拖放文件。"
   }
 }

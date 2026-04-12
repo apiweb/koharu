@@ -362,5 +362,9 @@
     },
     "close": "Close",
     "retry": "Retry"
+  },
+  "dropZone": {
+    "noValidFiles": "No supported image files found. Accepted formats: PNG, JPG, JPEG, WebP.",
+    "noFilePaths": "Could not import the dragged image. Try saving it to disk first, then drag the file."
   }
 }

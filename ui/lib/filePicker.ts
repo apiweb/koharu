@@ -1,8 +1,8 @@
 'use client'
 
-import { fileOpen, directoryOpen } from 'browser-fs-access'
+import { directoryOpen, fileOpen } from 'browser-fs-access'
 
-const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp']
+export const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp']
 
 export const pickImageFiles = async (): Promise<File[] | null> => {
   try {

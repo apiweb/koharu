@@ -361,5 +361,9 @@
     },
     "close": "Fechar",
     "retry": "Tentar novamente"
+  },
+  "dropZone": {
+    "noValidFiles": "Nenhum arquivo de imagem suportado encontrado. Formatos aceitos: PNG, JPG, JPEG, WebP.",
+    "noFilePaths": "Não foi possível importar a imagem arrastada. Tente salvá-la em disco primeiro e depois arraste o arquivo."
   }
 }

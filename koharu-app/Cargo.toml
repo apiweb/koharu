@@ -26,8 +26,9 @@ image = { workspace = true }
 imageproc = { workspace = true }
 open = { workspace = true }
 rayon = { workspace = true }
-rfd = { workspace = true }
+reqwest = { workspace = true }
 reqwest-middleware = { workspace = true }
+rfd = { workspace = true }
 secrecy = { workspace = true }
 serde = { workspace = true }
 utoipa = { workspace = true }

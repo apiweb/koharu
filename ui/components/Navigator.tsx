@@ -10,8 +10,10 @@ import {
 } from '@/lib/api/documents/documents'
 import { useEditorUiStore } from '@/lib/stores/editorUiStore'
 import { Button } from '@/components/ui/button'
+import { InsertionIndicator } from '@/components/DropZone'
 import { PageManagerDialog } from '@/components/PageManagerDialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useNavigatorFileDrop } from '@/hooks/useFileDrop'
 
 const THUMBNAIL_DPR =
   typeof window !== 'undefined'
@@ -32,9 +34,17 @@ export function Navigator() {
   const currentDocumentIndex = documents.findIndex(
     (d) => d.id === currentDocumentId,
   )
+  const panelRef = useRef<HTMLDivElement | null>(null)
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const { t } = useTranslation()
   const [pageManagerOpen, setPageManagerOpen] = useState(false)
+
+  const { isDragging, insertIndex } = useNavigatorFileDrop({
+    panelRef,
+    viewportRef,
+    rowHeight: ROW_HEIGHT,
+    totalPages,
+  })
 
   const virtualizer = useVirtualizer({
     count: totalPages,
@@ -45,9 +55,12 @@ export function Navigator() {
 
   return (
     <div
+      ref={panelRef}
       data-testid='navigator-panel'
       data-total-pages={totalPages}
-      className='bg-muted/50 flex h-full min-h-0 w-full flex-col border-r'
+      className={`bg-muted/50 flex h-full min-h-0 w-full flex-col border-r${
+        isDragging ? ' ring-primary/50 ring-2 ring-inset' : ''
+      }`}
     >
       <div className='border-border flex items-center justify-between border-b px-2 py-1.5'>
         <div>
@@ -84,11 +97,14 @@ export function Navigator() {
         )}
       </div>
 
-      <ScrollArea className='min-h-0 flex-1' viewportRef={viewportRef}>
+      <ScrollArea className='relative min-h-0 flex-1' viewportRef={viewportRef}>
         <div
           className='relative w-full'
-          style={{ height: virtualizer.getTotalSize() }}
+          style={{ height: virtualizer.getTotalSize() + (isDragging ? 16 : 0) }}
         >
+          {isDragging && insertIndex !== null && (
+            <InsertionIndicator top={insertIndex * ROW_HEIGHT} />
+          )}
           {virtualizer.getVirtualItems().map((virtualRow) => {
             const doc = documents[virtualRow.index]
             return (

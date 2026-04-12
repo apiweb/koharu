@@ -1,38 +1,39 @@
-import { setup, assign, fromPromise, fromCallback } from 'xstate'
-import type { QueryClient } from '@tanstack/react-query'
-import { ProgressBarStatus, getCurrentWindow } from '@/lib/backend'
-import { useEditorUiStore } from '@/lib/stores/editorUiStore'
-import { pickImageFiles, pickImageFolderFiles } from '@/lib/filePicker'
 import {
-  getListDocumentsQueryKey,
   getGetDocumentQueryKey,
+  getListDocumentsQueryKey,
   importDocuments,
 } from '@/lib/api/documents/documents'
+import { importFromPaths } from '@/lib/api/documents/importFromPaths'
+import { batchExport, exportDocument } from '@/lib/api/exports/exports'
+import { cancelJob, getJob, startPipeline } from '@/lib/api/jobs/jobs'
+import {
+  getGetLlmQueryKey,
+  getLlm,
+  loadLlm,
+  unloadLlm,
+} from '@/lib/api/llm/llm'
 import {
   detectDocument,
-  recognizeDocument,
   inpaintDocument,
+  recognizeDocument,
   renderDocument,
   translateDocument,
 } from '@/lib/api/processing/processing'
-import { startPipeline, cancelJob, getJob } from '@/lib/api/jobs/jobs'
-import { exportDocument, batchExport } from '@/lib/api/exports/exports'
-import {
-  loadLlm,
-  unloadLlm,
-  getLlm,
-  getGetLlmQueryKey,
-} from '@/lib/api/llm/llm'
-import { normalizeErrorMessage } from '@/lib/errors'
 import type {
+  DocumentSummary,
+  ExportLayer,
+  ImportResult,
+  LlmLoadRequest,
+  PipelineJobRequest,
   RenderRequest,
   TranslateRequest,
-  PipelineJobRequest,
-  LlmLoadRequest,
-  ExportLayer,
-  DocumentSummary,
-  ImportResult,
 } from '@/lib/api/schemas'
+import { ProgressBarStatus, getCurrentWindow } from '@/lib/backend'
+import { normalizeErrorMessage } from '@/lib/errors'
+import { pickImageFiles, pickImageFolderFiles } from '@/lib/filePicker'
+import { useEditorUiStore } from '@/lib/stores/editorUiStore'
+import type { QueryClient } from '@tanstack/react-query'
+import { assign, fromCallback, fromPromise, setup } from 'xstate'
 
 const importSelectedDocuments = async (
   files: File[],
@@ -105,6 +106,18 @@ export type ProcessingEvent =
     }
   | { type: 'START_BATCH_EXPORT'; layer: ExportLayer }
   | {
+      type: 'START_DROP_IMPORT'
+      files: File[]
+      mode: 'replace' | 'append'
+      insertAt?: number
+    }
+  | {
+      type: 'START_DROP_IMPORT_PATHS'
+      paths: string[]
+      mode: 'replace' | 'append'
+      insertAt?: number
+    }
+  | {
       type: 'PROGRESS'
       step?: string
       current: number
@@ -150,6 +163,24 @@ const importActor = fromPromise<
       : await pickImageFiles()
   if (!picked) throw new Error('__CANCELLED__')
   return importSelectedDocuments(picked, input.mode)
+})
+
+// Browser DnD: multipart import API doesn't support insertAt, always appends.
+const dropImportActor = fromPromise<
+  ImportResult,
+  { files: File[]; mode: 'replace' | 'append'; insertAt?: number }
+>(async ({ input }) => {
+  return importSelectedDocuments(input.files, input.mode)
+})
+
+const dropImportPathsActor = fromPromise<
+  ImportResult,
+  { paths: string[]; mode: 'replace' | 'append'; insertAt?: number }
+>(async ({ input }) => {
+  return importFromPaths(
+    { paths: input.paths, insertAt: input.insertAt },
+    { mode: input.mode },
+  )
 })
 
 const detectActor = fromPromise<void, { documentId: string }>(
@@ -318,6 +349,8 @@ export const processingMachine = setup({
   },
   actors: {
     importActor,
+    dropImportActor,
+    dropImportPathsActor,
     detectActor,
     recognizeActor,
     inpaintActor,
@@ -518,6 +551,14 @@ export const processingMachine = setup({
           target: 'batchExporting',
           actions: ['resetContext'],
         },
+        START_DROP_IMPORT: {
+          target: 'droppingFiles',
+          actions: ['resetContext'],
+        },
+        START_DROP_IMPORT_PATHS: {
+          target: 'droppingFilePaths',
+          actions: ['resetContext'],
+        },
       },
     },
 
@@ -547,6 +588,72 @@ export const processingMachine = setup({
         onError: {
           target: 'idle',
           actions: ['setImportError', 'surfaceError'],
+        },
+      },
+    },
+
+    // -----------------------------------------------------------------------
+    droppingFiles: {
+      entry: 'setProgressBarNormal',
+      exit: 'clearProgressBar',
+      invoke: {
+        src: 'dropImportActor',
+        input: ({ event }) => {
+          const e = event as Extract<
+            ProcessingEvent,
+            { type: 'START_DROP_IMPORT' }
+          >
+          return { files: e.files, mode: e.mode, insertAt: e.insertAt }
+        },
+        onDone: {
+          target: 'idle',
+          actions: [
+            'invalidateDocumentList',
+            ({ event }) => {
+              const result = event.output as ImportResult
+              const firstId = result.documents?.[0]?.id
+              if (firstId) {
+                useEditorUiStore.getState().setCurrentDocumentId(firstId)
+              }
+            },
+          ],
+        },
+        onError: {
+          target: 'idle',
+          actions: ['setErrorFromInvoke', 'surfaceError'],
+        },
+      },
+    },
+
+    // -----------------------------------------------------------------------
+    droppingFilePaths: {
+      entry: 'setProgressBarNormal',
+      exit: 'clearProgressBar',
+      invoke: {
+        src: 'dropImportPathsActor',
+        input: ({ event }) => {
+          const e = event as Extract<
+            ProcessingEvent,
+            { type: 'START_DROP_IMPORT_PATHS' }
+          >
+          return { paths: e.paths, mode: e.mode, insertAt: e.insertAt }
+        },
+        onDone: {
+          target: 'idle',
+          actions: [
+            'invalidateDocumentList',
+            ({ event }) => {
+              const result = event.output as ImportResult
+              const firstId = result.documents?.[0]?.id
+              if (firstId) {
+                useEditorUiStore.getState().setCurrentDocumentId(firstId)
+              }
+            },
+          ],
+        },
+        onError: {
+          target: 'idle',
+          actions: ['setErrorFromInvoke', 'surfaceError'],
         },
       },
     },

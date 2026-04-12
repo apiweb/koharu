@@ -182,6 +182,15 @@ pub struct ImportResult {
     pub documents: Vec<DocumentSummary>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportPathsRequest {
+    pub paths: Vec<String>,
+    /// 0-based insertion index among existing pages.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub insert_at: Option<usize>,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExportLayer {
@@ -399,6 +408,52 @@ mod tests {
     fn job_status_serializes_completed_with_errors_in_snake_case() {
         let encoded = serde_json::to_string(&JobStatus::CompletedWithErrors).expect("serialize");
         assert_eq!(encoded, "\"completed_with_errors\"");
+    }
+
+    #[test]
+    fn import_paths_request_round_trip() {
+        let req = super::ImportPathsRequest {
+            paths: vec![
+                "/Users/test/image.png".to_string(),
+                "/tmp/photo.jpg".to_string(),
+            ],
+            insert_at: None,
+        };
+        let json = serde_json::to_string(&req).expect("serialize");
+        let decoded: super::ImportPathsRequest = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(decoded.paths, req.paths);
+        assert_eq!(decoded.insert_at, None);
+    }
+
+    #[test]
+    fn import_paths_request_camel_case_json() {
+        let json = r#"{"paths":["/a.png"]}"#;
+        let req: super::ImportPathsRequest =
+            serde_json::from_str(json).expect("deserialize camelCase");
+        assert_eq!(req.paths, vec!["/a.png"]);
+        assert_eq!(req.insert_at, None);
+    }
+
+    #[test]
+    fn import_paths_request_with_insert_at() {
+        let json = r#"{"paths":["/a.png","/b.jpg"],"insertAt":2}"#;
+        let req: super::ImportPathsRequest =
+            serde_json::from_str(json).expect("deserialize with insertAt");
+        assert_eq!(req.paths, vec!["/a.png", "/b.jpg"]);
+        assert_eq!(req.insert_at, Some(2));
+    }
+
+    #[test]
+    fn import_paths_request_insert_at_omitted_in_serialization() {
+        let req = super::ImportPathsRequest {
+            paths: vec!["/x.png".to_string()],
+            insert_at: None,
+        };
+        let json = serde_json::to_string(&req).expect("serialize");
+        assert!(
+            !json.contains("insertAt"),
+            "insertAt should be omitted when None"
+        );
     }
 }
 
