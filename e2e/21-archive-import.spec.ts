@@ -110,3 +110,26 @@ test('imports mixed loose images and archives together', async ({ page }) => {
   await openNavigatorPage(page, lastIndex)
   await waitForWorkspaceImage(page)
 })
+
+test('deduplicates when archive contains already-imported images', async ({
+  page,
+}) => {
+  // The CBZ contains 1.jpg, 11.jpg, 20.jpg, duplicates should be silently skipped so only unique pages remain
+  const overlappingImages = [
+    path.join(FIXTURES_DIR, '1.jpg'),
+    path.join(FIXTURES_DIR, '11.jpg'),
+  ]
+
+  await importImages(page, overlappingImages)
+  await waitForNavigatorPageCount(page, overlappingImages.length)
+
+  // Add the archive which contains the same 1.jpg and 11.jpg plus 20.jpg
+  const fileChooserPromise = page.waitForEvent('filechooser')
+  await page.getByTestId(selectors.menu.fileTrigger).click()
+  await page.getByTestId('menu-file-add').click()
+  const fileChooser = await fileChooserPromise
+  await fileChooser.setFiles([CBZ_FIXTURE])
+
+  // Only 20.jpg (1 new page) should be added, the other 2 are duplicates
+  await waitForNavigatorPageCount(page, overlappingImages.length + 1)
+})

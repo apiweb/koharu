@@ -304,6 +304,18 @@ impl Storage {
         if replace {
             project.pages.clear();
         }
+
+        let mut seen_ids: std::collections::HashSet<String> =
+            project.pages.iter().map(|p| p.id.clone()).collect();
+        let pages: Vec<Document> = pages
+            .into_iter()
+            .filter(|p| seen_ids.insert(p.id.clone()))
+            .collect();
+
+        if pages.is_empty() {
+            return Ok(Vec::new());
+        }
+
         let next_order = project
             .pages
             .iter()
@@ -728,5 +740,71 @@ mod tests {
         assert_eq!(pages[1].id, "b", "B must stay second after adding D");
         assert_eq!(pages[2].id, "a", "A must stay third after adding D");
         assert_eq!(pages[3].id, "d", "D must be last");
+    }
+
+    // ── import_files deduplication ──────────────────────────────────
+
+    #[tokio::test]
+    async fn import_files_deduplicates_within_batch() {
+        let (storage, _dir) = open_test_storage(vec![]);
+
+        // Create two identical "files", same content -> same blake3 ID
+        let data = include_bytes!("../../e2e/fixtures/1.jpg").to_vec();
+        let files = vec![
+            koharu_core::FileEntry {
+                name: "copy_a.jpg".to_string(),
+                data: data.clone(),
+            },
+            koharu_core::FileEntry {
+                name: "copy_b.jpg".to_string(),
+                data,
+            },
+        ];
+
+        let imported = storage.import_files(files, false).await.unwrap();
+        assert_eq!(imported.len(), 1, "only one page should survive dedup");
+        assert_eq!(storage.page_count().await, 1);
+    }
+
+    #[tokio::test]
+    async fn import_files_deduplicates_against_existing() {
+        let (storage, _dir) = open_test_storage(vec![]);
+
+        let data = include_bytes!("../../e2e/fixtures/1.jpg").to_vec();
+        let files = vec![koharu_core::FileEntry {
+            name: "first.jpg".to_string(),
+            data: data.clone(),
+        }];
+        storage.import_files(files, false).await.unwrap();
+        assert_eq!(storage.page_count().await, 1);
+
+        let files = vec![koharu_core::FileEntry {
+            name: "duplicate.jpg".to_string(),
+            data,
+        }];
+        let imported = storage.import_files(files, false).await.unwrap();
+        assert!(imported.is_empty(), "duplicate should be silently skipped");
+        assert_eq!(storage.page_count().await, 1);
+    }
+
+    #[tokio::test]
+    async fn import_files_replace_ignores_previous_pages() {
+        let (storage, _dir) = open_test_storage(vec![]);
+
+        let data = include_bytes!("../../e2e/fixtures/1.jpg").to_vec();
+        let files = vec![koharu_core::FileEntry {
+            name: "orig.jpg".to_string(),
+            data: data.clone(),
+        }];
+        storage.import_files(files, false).await.unwrap();
+        assert_eq!(storage.page_count().await, 1);
+
+        let files = vec![koharu_core::FileEntry {
+            name: "same.jpg".to_string(),
+            data,
+        }];
+        let imported = storage.import_files(files, true).await.unwrap();
+        assert_eq!(imported.len(), 1, "replace must clear then import");
+        assert_eq!(storage.page_count().await, 1);
     }
 }
