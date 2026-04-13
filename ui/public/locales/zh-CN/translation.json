@@ -1,6 +1,9 @@
 {
   "common": {
-    "initializing": "初始化中..."
+    "initializing": "初始化中...",
+    "cancel": "取消",
+    "save": "保存",
+    "saved": "已保存！"
   },
   "menu": {
     "file": "文件",
@@ -57,7 +60,11 @@
     "pages_one": "{{count}} 页",
     "pages_other": "{{count}} 页",
     "empty": "没有文档",
-    "prompt": "选择或导入页面开始"
+    "prompt": "选择或导入页面开始",
+    "pageManager": {
+      "title": "页面管理",
+      "description": "拖放页面以重新排列顺序。"
+    }
   },
   "panels": {
     "processing": "处理",
@@ -335,7 +342,16 @@
     "ocr": "OCR",
     "translator": "翻译器",
     "inpainter": "修补器",
-    "renderer": "渲染器"
+    "renderer": "渲染器",
+    "keybinds": "快捷键",
+    "keybindsDescription": "自定义工具和操作的快捷键。",
+    "shortcutIncreaseBrushSize": "增大笔刷大小",
+    "shortcutDecreaseBrushSize": "减小笔刷大小",
+    "shortcutPressKey": "请按下一个按键...",
+    "shortcutReset": "重置快捷键",
+    "shortcutResetDescription": "这将恢复所有快捷键到默认值。您保存的更改将丢失。",
+    "shortcutConflict": "此按键组合已在使用中",
+    "shortcutInvalid": "此按键不能用作快捷键"
   },
   "updater": {
     "available": {

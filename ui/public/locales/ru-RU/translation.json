@@ -1,6 +1,9 @@
 {
   "common": {
-    "initializing": "Инициализация..."
+    "initializing": "Инициализация...",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "saved": "Сохранено!"
   },
   "menu": {
     "file": "Файл",
@@ -57,7 +60,11 @@
     "pages_one": "{{count}} стр.",
     "pages_other": "{{count}} стр.",
     "empty": "Нет документов",
-    "prompt": "Выберите или импортируйте страницу для начала"
+    "prompt": "Выберите или импортируйте страницу для начала",
+    "pageManager": {
+      "title": "Управление страницами",
+      "description": "Перетащите страницы для изменения порядка."
+    }
   },
   "panels": {
     "processing": "Обработка",
@@ -335,7 +342,16 @@
     "ocr": "OCR",
     "translator": "Переводчик",
     "inpainter": "Инпейнтер",
-    "renderer": "Рендерер"
+    "renderer": "Рендерер",
+    "keybinds": "Горячие клавиши",
+    "keybindsDescription": "Настройте сочетания клавиш для инструментов и действий.",
+    "shortcutIncreaseBrushSize": "Увеличить размер кисти",
+    "shortcutDecreaseBrushSize": "Уменьшить размер кисти",
+    "shortcutPressKey": "Нажмите клавишу...",
+    "shortcutReset": "Сбросить сочетания",
+    "shortcutResetDescription": "Это восстановит все сочетания клавиш до их значений по умолчанию. Сохраненные изменения будут потеряны.",
+    "shortcutConflict": "Сочетание клавиш уже используется",
+    "shortcutInvalid": "Эту клавишу нельзя использовать как горячую"
   },
   "updater": {
     "available": {

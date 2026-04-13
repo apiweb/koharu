@@ -1,6 +1,9 @@
 {
   "common": {
-    "initializing": "初期化中..."
+    "initializing": "初期化中...",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "saved": "保存しました！"
   },
   "menu": {
     "file": "ファイル",
@@ -57,7 +60,11 @@
     "pages_one": "{{count}} ページ",
     "pages_other": "{{count}} ページ",
     "empty": "ドキュメントがありません",
-    "prompt": "ページを選択または読み込んで開始してください"
+    "prompt": "ページを選択または読み込んで開始してください",
+    "pageManager": {
+      "title": "ページ管理",
+      "description": "ドラッグ＆ドロップでページの順番を変更します。"
+    }
   },
   "panels": {
     "processing": "処理",
@@ -335,7 +342,16 @@
     "ocr": "OCR",
     "translator": "翻訳器",
     "inpainter": "インペインター",
-    "renderer": "レンダラー"
+    "renderer": "レンダラー",
+    "keybinds": "キーバインド",
+    "keybindsDescription": "ツールやアクションのショートカットキーをカスタマイズします。",
+    "shortcutIncreaseBrushSize": "ブラシサイズを大きくする",
+    "shortcutDecreaseBrushSize": "ブラシサイズを小さくする",
+    "shortcutPressKey": "キーを押してください...",
+    "shortcutReset": "ショートカットのリセット",
+    "shortcutResetDescription": "すべてのショートカットをデフォルト値に戻します。保存された変更は失われます。",
+    "shortcutConflict": "そのキーの組み合わせは既に使用されています",
+    "shortcutInvalid": "このキーはショートカットとして使用できません"
   },
   "updater": {
     "available": {

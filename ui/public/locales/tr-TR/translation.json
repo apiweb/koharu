@@ -1,6 +1,9 @@
 {
   "common": {
-    "initializing": "Başlatılıyor..."
+    "initializing": "Başlatılıyor...",
+    "cancel": "İptal",
+    "save": "Kaydet",
+    "saved": "Kaydedildi!"
   },
   "menu": {
     "file": "Dosya",
@@ -57,7 +60,11 @@
     "pages_one": "{{count}} sayfa",
     "pages_other": "{{count}} sayfa",
     "empty": "Belge yok",
-    "prompt": "Başlamak için bir sayfa seçin veya içe aktarın"
+    "prompt": "Başlamak için bir sayfa seçin veya içe aktarın",
+    "pageManager": {
+      "title": "Sayfa Yöneticisi",
+      "description": "Sayfaları yeniden sıralamak için sürükleyip bırakın."
+    }
   },
   "panels": {
     "processing": "İşleme",
@@ -335,7 +342,16 @@
     "ocr": "OCR",
     "translator": "Çevirici",
     "inpainter": "İnpaint Motoru",
-    "renderer": "Render Motoru"
+    "renderer": "Render Motoru",
+    "keybinds": "Tuş Atamaları",
+    "keybindsDescription": "Araçlar ve eylemler için klavye kısa yollarını özelleştirin.",
+    "shortcutIncreaseBrushSize": "Fırça Boyutunu Artır",
+    "shortcutDecreaseBrushSize": "Fırça Boyutunu Azalt",
+    "shortcutPressKey": "Bir tuşa basın...",
+    "shortcutReset": "Kısayolları Sıfırla",
+    "shortcutResetDescription": "Bu, tüm klavye kısayollarını varsayılan değerlerine döndürecektir. Kaydedilen değişiklikleriniz kaybolacaktır.",
+    "shortcutConflict": "Tuş kombinasyonu zaten kullanılıyor",
+    "shortcutInvalid": "Bu tuş kısayol olarak kullanılamaz"
   },
   "updater": {
     "available": {
