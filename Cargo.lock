@@ -4383,7 +4383,7 @@ dependencies = [
 
 [[package]]
 name = "koharu"
-version = "0.43.2"
+version = "0.44.5"
 dependencies = [
  "anyhow",
  "camino",
@@ -4417,7 +4417,7 @@ dependencies = [
 
 [[package]]
 name = "koharu-app"
-version = "0.43.2"
+version = "0.44.5"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4457,7 +4457,7 @@ dependencies = [
 
 [[package]]
 name = "koharu-core"
-version = "0.43.2"
+version = "0.44.5"
 dependencies = [
  "anyhow",
  "blake3",
@@ -4474,7 +4474,7 @@ dependencies = [
 
 [[package]]
 name = "koharu-llm"
-version = "0.43.2"
+version = "0.44.5"
 dependencies = [
  "anyhow",
  "bindgen",
@@ -4514,7 +4514,7 @@ dependencies = [
 
 [[package]]
 name = "koharu-ml"
-version = "0.43.2"
+version = "0.44.5"
 dependencies = [
  "anyhow",
  "candle-core",
@@ -4552,7 +4552,7 @@ dependencies = [
 
 [[package]]
 name = "koharu-psd"
-version = "0.43.2"
+version = "0.44.5"
 dependencies = [
  "image",
  "koharu-core",
@@ -4561,7 +4561,7 @@ dependencies = [
 
 [[package]]
 name = "koharu-renderer"
-version = "0.43.2"
+version = "0.44.5"
 dependencies = [
  "anyhow",
  "criterion",
@@ -4583,7 +4583,7 @@ dependencies = [
 
 [[package]]
 name = "koharu-rpc"
-version = "0.43.2"
+version = "0.44.5"
 dependencies = [
  "anyhow",
  "axum",
@@ -4609,7 +4609,7 @@ dependencies = [
 
 [[package]]
 name = "koharu-runtime"
-version = "0.43.2"
+version = "0.44.5"
 dependencies = [
  "anyhow",
  "axum",
@@ -5955,16 +5955,24 @@ dependencies = [
 
 [[package]]
 name = "petname"
-version = "2.0.2"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cd31dcfdbbd7431a807ef4df6edd6473228e94d5c805e8cf671227a21bad068"
+checksum = "2ce610bff48dd7b6a127e45631795fbb0b302b99a39bef7e6da3d297e8eb2b6b"
 dependencies = [
- "anyhow",
  "clap",
- "itertools 0.14.0",
+ "petname-macros",
+ "rand 0.10.0",
+]
+
+[[package]]
+name = "petname-macros"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "324239bd00dcf61f1a0e301d4d8f6f8c080a755248fc3fdc817ee1fdbbc27b8b"
+dependencies = [
  "proc-macro2",
  "quote",
- "rand 0.8.5",
+ "syn 2.0.117",
 ]
 
 [[package]]
