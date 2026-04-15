@@ -46,4 +46,3 @@ natord = { workspace = true }
 serde_json = { workspace = true }
 zip = { workspace = true }
 sevenz-rust = { workspace = true }
-natord = { workspace = true }
