@@ -35,6 +35,9 @@ import {
   MenubarItem,
   MenubarMenu,
   MenubarSeparator,
+  MenubarSub,
+  MenubarSubContent,
+  MenubarSubTrigger,
   MenubarTrigger,
 } from '@/components/ui/menubar'
 import { SettingsDialog, type TabId } from '@/components/SettingsDialog'
@@ -250,6 +253,34 @@ export function MenuBar() {
                 {item.label}
               </MenubarItem>
             ))}
+            <MenubarSub>
+              <MenubarSubTrigger
+                data-testid='menu-file-export-archive'
+                className='text-[13px]'
+              >
+                {t('menu.exportRenderedArchive')}
+              </MenubarSubTrigger>
+              <MenubarSubContent>
+                <MenubarItem
+                  data-testid='menu-file-export-archive-cbz'
+                  className='text-[13px]'
+                  onSelect={() =>
+                    send({ type: 'START_ARCHIVE_EXPORT', format: 'cbz' })
+                  }
+                >
+                  {t('menu.exportCbz')}
+                </MenubarItem>
+                <MenubarItem
+                  data-testid='menu-file-export-archive-cb7'
+                  className='text-[13px]'
+                  onSelect={() =>
+                    send({ type: 'START_ARCHIVE_EXPORT', format: 'cb7' })
+                  }
+                >
+                  {t('menu.exportCb7')}
+                </MenubarItem>
+              </MenubarSubContent>
+            </MenubarSub>
             <MenubarSeparator />
             <MenubarItem
               className='text-[13px]'

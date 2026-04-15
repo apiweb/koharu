@@ -1,38 +1,43 @@
-import { setup, assign, fromPromise, fromCallback } from 'xstate'
-import type { QueryClient } from '@tanstack/react-query'
-import { ProgressBarStatus, getCurrentWindow } from '@/lib/backend'
-import { useEditorUiStore } from '@/lib/stores/editorUiStore'
-import { pickImageFiles, pickImageFolderFiles } from '@/lib/filePicker'
 import {
-  getListDocumentsQueryKey,
   getGetDocumentQueryKey,
+  getListDocumentsQueryKey,
   importDocuments,
 } from '@/lib/api/documents/documents'
 import {
+  batchExport,
+  exportArchive,
+  exportDocument,
+} from '@/lib/api/exports/exports'
+import { cancelJob, getJob, startPipeline } from '@/lib/api/jobs/jobs'
+import {
+  getGetLlmQueryKey,
+  getLlm,
+  loadLlm,
+  unloadLlm,
+} from '@/lib/api/llm/llm'
+import {
   detectDocument,
-  recognizeDocument,
   inpaintDocument,
+  recognizeDocument,
   renderDocument,
   translateDocument,
 } from '@/lib/api/processing/processing'
-import { startPipeline, cancelJob, getJob } from '@/lib/api/jobs/jobs'
-import { exportDocument, batchExport } from '@/lib/api/exports/exports'
-import {
-  loadLlm,
-  unloadLlm,
-  getLlm,
-  getGetLlmQueryKey,
-} from '@/lib/api/llm/llm'
-import { normalizeErrorMessage } from '@/lib/errors'
 import type {
+  ArchiveFormat,
+  DocumentSummary,
+  ExportLayer,
+  ImportResult,
+  LlmLoadRequest,
+  PipelineJobRequest,
   RenderRequest,
   TranslateRequest,
-  PipelineJobRequest,
-  LlmLoadRequest,
-  ExportLayer,
-  DocumentSummary,
-  ImportResult,
 } from '@/lib/api/schemas'
+import { ProgressBarStatus, getCurrentWindow } from '@/lib/backend'
+import { normalizeErrorMessage } from '@/lib/errors'
+import { pickImageFiles, pickImageFolderFiles } from '@/lib/filePicker'
+import { useEditorUiStore } from '@/lib/stores/editorUiStore'
+import type { QueryClient } from '@tanstack/react-query'
+import { assign, fromCallback, fromPromise, setup } from 'xstate'
 
 const importSelectedDocuments = async (
   files: File[],
@@ -104,6 +109,7 @@ export type ProcessingEvent =
       params?: { layer?: ExportLayer | null }
     }
   | { type: 'START_BATCH_EXPORT'; layer: ExportLayer }
+  | { type: 'START_ARCHIVE_EXPORT'; format: ArchiveFormat }
   | {
       type: 'PROGRESS'
       step?: string
@@ -241,6 +247,12 @@ const batchExportActor = fromPromise<void, { layer: ExportLayer }>(
   },
 )
 
+const archiveExportActor = fromPromise<void, { format: ArchiveFormat }>(
+  async ({ input }) => {
+    await exportArchive({ format: input.format })
+  },
+)
+
 // ---------------------------------------------------------------------------
 // Polling actors (replace SSE)
 // ---------------------------------------------------------------------------
@@ -329,6 +341,7 @@ export const processingMachine = setup({
     llmUnloadActor,
     exportActor,
     batchExportActor,
+    archiveExportActor,
     jobPollingActor,
     llmPollingActor,
   },
@@ -516,6 +529,10 @@ export const processingMachine = setup({
         },
         START_BATCH_EXPORT: {
           target: 'batchExporting',
+          actions: ['resetContext'],
+        },
+        START_ARCHIVE_EXPORT: {
+          target: 'archiveExporting',
           actions: ['resetContext'],
         },
       },
@@ -860,6 +877,29 @@ export const processingMachine = setup({
             { type: 'START_BATCH_EXPORT' }
           >
           return { layer: e.layer }
+        },
+        onDone: {
+          target: 'idle',
+        },
+        onError: {
+          target: 'idle',
+          actions: ['setErrorFromInvoke', 'surfaceError'],
+        },
+      },
+    },
+
+    // -----------------------------------------------------------------------
+    archiveExporting: {
+      entry: 'setProgressBarNormal',
+      exit: 'clearProgressBar',
+      invoke: {
+        src: 'archiveExportActor',
+        input: ({ event }) => {
+          const e = event as Extract<
+            ProcessingEvent,
+            { type: 'START_ARCHIVE_EXPORT' }
+          >
+          return { format: e.format }
         },
         onDone: {
           target: 'idle',

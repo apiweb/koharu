@@ -10,10 +10,10 @@ use axum::{
 };
 use koharu_app::{AppResources, config as app_config, edit, engine, io, llm, pipeline};
 use koharu_core::{
-    CreateTextBlock, Document, DocumentDetail, DocumentSummary, DownloadState, ExportLayer,
-    ExportResult, FontFaceInfo, JobState, LlmCatalog, LlmLoadRequest, LlmState, MaskRegionRequest,
-    MetaInfo, PipelineJobRequest, RenderRequest, ReorderRequest, TextBlock, TextBlockDetail,
-    TextBlockInput, TextBlockPatch, TranslateRequest,
+    ArchiveFormat, CreateTextBlock, Document, DocumentDetail, DocumentSummary, DownloadState,
+    ExportLayer, ExportResult, FontFaceInfo, JobState, LlmCatalog, LlmLoadRequest, LlmState,
+    MaskRegionRequest, MetaInfo, PipelineJobRequest, RenderRequest, ReorderRequest, TextBlock,
+    TextBlockDetail, TextBlockInput, TextBlockPatch, TranslateRequest,
 };
 use koharu_psd::{PsdExportOptions, TextLayerMode};
 use serde::{Deserialize, Serialize};
@@ -58,6 +58,7 @@ pub fn api() -> (axum::Router<ApiState>, utoipa::openapi::OpenApi) {
         .routes(routes!(patch_text_block, delete_text_block))
         .routes(routes!(export_document))
         .routes(routes!(batch_export))
+        .routes(routes!(export_archive))
         .routes(routes!(get_llm, load_llm, unload_llm))
         .routes(routes!(get_llm_catalog))
         .routes(routes!(start_pipeline))
@@ -155,6 +156,12 @@ struct ExportQuery {
 #[serde(rename_all = "camelCase")]
 struct ExportBatchRequest {
     layer: Option<ExportLayer>,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+#[serde(rename_all = "camelCase")]
+struct ExportArchiveRequest {
+    format: ArchiveFormat,
 }
 
 // ---------------------------------------------------------------------------
@@ -1453,6 +1460,28 @@ async fn batch_export(
         ExportLayer::Rendered => io::export_all_rendered(resources).await?,
         ExportLayer::Inpainted => io::export_all_inpainted(resources).await?,
     };
+    Ok(Json(ExportResult { count }))
+}
+
+#[utoipa::path(
+    post,
+    path = "/exports/archive",
+    operation_id = "exportArchive",
+    tag = "exports",
+    request_body = ExportArchiveRequest,
+    responses(
+        (status = 200, body = ExportResult),
+        (status = 400, body = ApiError),
+        (status = 503, body = ApiError),
+    ),
+)]
+#[tracing::instrument(level = "info", skip_all)]
+async fn export_archive(
+    State(state): State<ApiState>,
+    Json(request): Json<ExportArchiveRequest>,
+) -> ApiResult<Json<ExportResult>> {
+    let resources = state.resources()?;
+    let count = io::export_archive(resources, request.format).await?;
     Ok(Json(ExportResult { count }))
 }
 

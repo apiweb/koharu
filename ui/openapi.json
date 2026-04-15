@@ -1396,6 +1396,56 @@
         }
       }
     },
+    "/exports/archive": {
+      "post": {
+        "tags": [
+          "exports"
+        ],
+        "operationId": "exportArchive",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportArchiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/fonts": {
       "get": {
         "tags": ["system"],
@@ -1858,6 +1908,13 @@
           }
         }
       },
+      "ArchiveFormat": {
+        "type": "string",
+        "enum": [
+          "cbz",
+          "cb7"
+        ]
+      },
       "BrushRegionRequest": {
         "type": "object",
         "required": ["data", "region"],
@@ -2069,6 +2126,17 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "ExportArchiveRequest": {
+        "type": "object",
+        "required": [
+          "format"
+        ],
+        "properties": {
+          "format": {
+            "$ref": "#/components/schemas/ArchiveFormat"
           }
         }
       },

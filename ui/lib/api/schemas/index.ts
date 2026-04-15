@@ -5,6 +5,7 @@
  */
 
 export * from './apiError'
+export * from './archiveFormat'
 export * from './brushRegionRequest'
 export * from './createTextBlock'
 export * from './dataConfig'
@@ -13,6 +14,7 @@ export * from './documentStyle'
 export * from './documentSummary'
 export * from './downloadState'
 export * from './engineCatalogEntry'
+export * from './exportArchiveRequest'
 export * from './exportBatchRequest'
 export * from './exportDocumentParams'
 export * from './exportLayer'

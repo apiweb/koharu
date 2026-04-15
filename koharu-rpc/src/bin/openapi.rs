@@ -7,6 +7,7 @@ fn main() {
             utoipa::openapi::ComponentsBuilder::new()
                 .schema_from::<koharu_core::ImportMode>()
                 .schema_from::<koharu_core::ExportLayer>()
+                .schema_from::<koharu_core::ArchiveFormat>()
                 .build(),
         ))
         .build();

@@ -1,7 +1,8 @@
-use std::io::{Cursor, Read};
+use std::io::{Cursor, Read, Write};
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
+use koharu_core::ArchiveFormat;
 use koharu_core::commands::FileEntry;
 
 const ZIP_MAGIC: [u8; 4] = [0x50, 0x4B, 0x03, 0x04];
@@ -194,6 +195,53 @@ fn flat_name(archive_path: &str, prefix: bool) -> String {
     }
 
     components.join("_")
+}
+
+// ── Archive Export ──────────────────────────────────────────────────
+
+pub struct ExportEntry {
+    pub filename: String,
+    pub data: Vec<u8>,
+}
+
+pub fn create_archive(entries: &[ExportEntry], format: ArchiveFormat) -> Result<Vec<u8>> {
+    match format {
+        ArchiveFormat::Cbz => create_cbz(entries),
+        ArchiveFormat::Cb7 => create_cb7(entries),
+    }
+}
+
+fn create_cbz(entries: &[ExportEntry]) -> Result<Vec<u8>> {
+    let cursor = Cursor::new(Vec::new());
+    let mut writer = zip::ZipWriter::new(cursor);
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    for entry in entries {
+        writer
+            .start_file(&entry.filename, options)
+            .with_context(|| format!("failed to write entry `{}`", entry.filename))?;
+        writer.write_all(&entry.data)?;
+    }
+    Ok(writer.finish()?.into_inner())
+}
+
+fn create_cb7(entries: &[ExportEntry]) -> Result<Vec<u8>> {
+    let dir = tempfile::tempdir().context("failed to create temp dir for 7z export")?;
+    for entry in entries {
+        let path = dir.path().join(&entry.filename);
+        std::fs::write(&path, &entry.data)
+            .with_context(|| format!("failed to write temp file `{}`", entry.filename))?;
+    }
+    let out_path = dir.path().join("archive.7z");
+    sevenz_rust::compress_to_path(dir.path(), &out_path).context("failed to create 7z archive")?;
+    std::fs::read(&out_path).context("failed to read 7z archive")
+}
+
+pub fn archive_extension(format: ArchiveFormat) -> &'static str {
+    match format {
+        ArchiveFormat::Cbz => "cbz",
+        ArchiveFormat::Cb7 => "cb7",
+    }
 }
 
 #[cfg(test)]
@@ -583,5 +631,59 @@ mod tests {
             chain.contains("no supported image files"),
             "unexpected error: {chain}",
         );
+    }
+
+    // ── archive export ──────────────────────────────────────────────
+
+    #[test]
+    fn create_cbz_produces_valid_zip() {
+        let png = tiny_png();
+        let entries = vec![
+            ExportEntry {
+                filename: "P001.webp".into(),
+                data: png.clone(),
+            },
+            ExportEntry {
+                filename: "P002.webp".into(),
+                data: png.clone(),
+            },
+        ];
+
+        let archive = create_archive(&entries, ArchiveFormat::Cbz).unwrap();
+        assert!(is_zip(&archive));
+
+        let cursor = Cursor::new(archive);
+        let mut zip = zip::ZipArchive::new(cursor).unwrap();
+        assert_eq!(zip.len(), 2);
+        assert_eq!(zip.by_index(0).unwrap().name(), "P001.webp");
+        assert_eq!(zip.by_index(1).unwrap().name(), "P002.webp");
+    }
+
+    #[test]
+    fn create_cb7_produces_valid_7z() {
+        let png = tiny_png();
+        let entries = vec![ExportEntry {
+            filename: "P001.webp".into(),
+            data: png.clone(),
+        }];
+
+        let archive = create_archive(&entries, ArchiveFormat::Cb7).unwrap();
+        assert!(is_7z(&archive));
+    }
+
+    #[test]
+    fn create_cbz_roundtrips_content() {
+        let png = tiny_png();
+        let entries = vec![ExportEntry {
+            filename: "P001.webp".into(),
+            data: png.clone(),
+        }];
+
+        let archive = create_archive(&entries, ArchiveFormat::Cbz).unwrap();
+        let cursor = Cursor::new(archive);
+        let mut zip = zip::ZipArchive::new(cursor).unwrap();
+        let mut buf = Vec::new();
+        zip.by_index(0).unwrap().read_to_end(&mut buf).unwrap();
+        assert_eq!(buf, png);
     }
 }

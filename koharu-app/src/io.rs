@@ -1,4 +1,5 @@
 use image::ImageFormat;
+use koharu_core::ArchiveFormat;
 use koharu_core::Document;
 use koharu_core::commands::{
     DeviceInfo, FileResult, OpenDocumentsPayload, OpenExternalPayload, ThumbnailResult,
@@ -6,7 +7,7 @@ use koharu_core::commands::{
 use rfd::FileDialog;
 
 use crate::AppResources;
-use crate::archive::expand_archives;
+use crate::archive::{ExportEntry, archive_extension, create_archive, expand_archives};
 use crate::utils::{encode_image_dynamic, mime_from_ext};
 
 pub async fn app_version(state: AppResources) -> anyhow::Result<String> {
@@ -154,4 +155,44 @@ pub async fn export_all_rendered(state: AppResources) -> anyhow::Result<usize> {
 
 async fn pick_output_dir() -> anyhow::Result<Option<std::path::PathBuf>> {
     Ok(tokio::task::spawn_blocking(|| FileDialog::new().pick_folder()).await?)
+}
+
+async fn pick_save_file(ext: &str) -> anyhow::Result<Option<std::path::PathBuf>> {
+    let ext = ext.to_string();
+    Ok(tokio::task::spawn_blocking(move || {
+        FileDialog::new()
+            .set_file_name(format!("export.{ext}"))
+            .add_filter(format!("{} archive", ext.to_uppercase()), &[&ext])
+            .save_file()
+    })
+    .await?)
+}
+
+#[tracing::instrument(level = "info", skip_all)]
+pub async fn export_archive(state: AppResources, format: ArchiveFormat) -> anyhow::Result<usize> {
+    let ext = archive_extension(format);
+    let Some(output_path) = pick_save_file(ext).await? else {
+        return Ok(0);
+    };
+
+    let pages = state.storage.with_project(|p| p.pages.clone()).await;
+
+    let mut entries = Vec::new();
+    for doc in &pages {
+        let Some(ref rendered_ref) = doc.rendered else {
+            continue;
+        };
+        let img = state.storage.images.load(rendered_ref)?;
+        let bytes = encode_image_dynamic(&img, "webp")?;
+        let filename = format!("P{:03}.webp", entries.len() + 1);
+        entries.push(ExportEntry {
+            filename,
+            data: bytes,
+        });
+    }
+    anyhow::ensure!(!entries.is_empty(), "No rendered images found to export");
+
+    let data = create_archive(&entries, format)?;
+    std::fs::write(&output_path, data)?;
+    Ok(entries.len())
 }

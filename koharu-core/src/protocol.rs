@@ -197,6 +197,13 @@ pub struct ExportResult {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, ToSchema)]
 #[serde(rename_all = "snake_case")]
+pub enum ArchiveFormat {
+    Cbz,
+    Cb7,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, ToSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum LlmStateStatus {
     Empty,
     Loading,

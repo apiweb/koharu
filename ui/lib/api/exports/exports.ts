@@ -3,7 +3,6 @@
  * Do not edit manually.
  * OpenAPI spec version: 0.0.1
  */
-import { useMutation, useQuery } from '@tanstack/react-query'
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -18,9 +17,11 @@ import type {
   UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 import type {
   ApiError,
+  ExportArchiveRequest,
   ExportBatchRequest,
   ExportDocumentParams,
   ExportResult,
@@ -295,4 +296,20 @@ export const useBatchExport = <TError = ApiError, TContext = unknown>(
   TContext
 > => {
   return useMutation(getBatchExportMutationOptions(options), queryClient)
+}
+
+export const getExportArchiveUrl = () => {
+  return `/api/v1/exports/archive`
+}
+
+export const exportArchive = async (
+  exportArchiveRequest: ExportArchiveRequest,
+  options?: RequestInit,
+): Promise<ExportResult> => {
+  return fetchApi<ExportResult>(getExportArchiveUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(exportArchiveRequest),
+  })
 }
