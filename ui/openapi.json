@@ -370,6 +370,57 @@
         }
       }
     },
+    "/documents/order": {
+      "put": {
+        "tags": ["documents"],
+        "operationId": "reorderDocuments",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentSummary"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/documents/{document_id}": {
       "get": {
         "tags": ["documents"],
@@ -1927,6 +1978,7 @@
           "name",
           "width",
           "height",
+          "order",
           "hasSegment",
           "hasInpainted",
           "hasBrushLayer",
@@ -1956,6 +2008,11 @@
           },
           "name": {
             "type": "string"
+          },
+          "order": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           },
           "textBlockCount": {
             "type": "integer",
@@ -2275,13 +2332,7 @@
       },
       "JobStatus": {
         "type": "string",
-        "enum": [
-          "running",
-          "completed",
-          "completed_with_errors",
-          "cancelled",
-          "failed"
-        ]
+        "enum": ["running", "completed", "completed_with_errors", "cancelled", "failed"]
       },
       "LlmCatalog": {
         "type": "object",
@@ -2548,6 +2599,9 @@
       "PipelineJobRequest": {
         "type": "object",
         "properties": {
+          "defaultFont": {
+            "type": ["string", "null"]
+          },
           "documentId": {
             "type": ["string", "null"]
           },
@@ -2675,6 +2729,18 @@
           },
           "textBlockId": {
             "type": ["string", "null"]
+          }
+        }
+      },
+      "ReorderRequest": {
+        "type": "object",
+        "required": ["ids"],
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

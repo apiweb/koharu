@@ -3,6 +3,7 @@
 import { type ComponentType, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useHotkeys } from 'react-hotkeys-hook'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   AlignCenterIcon,
   AlignLeftIcon,
@@ -16,33 +17,22 @@ import {
   PlusIcon,
   SquareIcon,
 } from 'lucide-react'
-import { useTextBlocks } from '@/hooks/useTextBlocks'
-import {
-  RenderEffect,
-  RenderStroke,
-  RgbaColor,
-  TextAlign,
-  TextStyle,
-} from '@/types'
-import type { FontFaceInfo } from '@/lib/api/schemas'
+import { type ComponentType, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+
 import { Button } from '@/components/ui/button'
 import { ColorPicker } from '@/components/ui/color-picker'
-import { Input } from '@/components/ui/input'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { FontSelect } from '@/components/ui/font-select'
+import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useTextBlocks } from '@/hooks/useTextBlocks'
+import { getGetDocumentQueryKey, updateDocumentStyle } from '@/lib/api/documents/documents'
+import type { FontFaceInfo } from '@/lib/api/schemas'
+import { useListFonts, useGetGoogleFontsCatalog } from '@/lib/api/system/system'
 import { useEditorUiStore } from '@/lib/stores/editorUiStore'
 import { usePreferencesStore } from '@/lib/stores/preferencesStore'
-import { useListFonts, useGetGoogleFontsCatalog } from '@/lib/api/system/system'
-import {
-  getGetDocumentQueryKey,
-  updateDocumentStyle,
-} from '@/lib/api/documents/documents'
-import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
+import { RenderEffect, RenderStroke, RgbaColor, TextAlign, TextStyle } from '@/types'
 
 const DEFAULT_COLOR: RgbaColor = [0, 0, 0, 255]
 const DEFAULT_FONT_FACES: FontFaceInfo[] = [
@@ -66,19 +56,14 @@ const DEFAULT_STROKE_WIDTH = 1.6
 const MIN_STROKE_WIDTH = 0.2
 const MAX_STROKE_WIDTH = 24
 const STROKE_WIDTH_STEP = 0.1
-const LATIN_ONLY_PATTERN =
-  /^[\p{Script=Latin}\p{Script=Common}\p{Script=Inherited}]*$/u
 
 const IS_MAC =
   typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent)
 
-const clampByte = (value: number) =>
-  Math.max(0, Math.min(255, Math.round(value)))
+const clampByte = (value: number) => Math.max(0, Math.min(255, Math.round(value)))
 
 const clampStrokeWidth = (value: number) =>
-  Number(
-    Math.max(MIN_STROKE_WIDTH, Math.min(MAX_STROKE_WIDTH, value)).toFixed(1),
-  )
+  Number(Math.max(MIN_STROKE_WIDTH, Math.min(MAX_STROKE_WIDTH, value)).toFixed(1))
 
 const colorToHex = (color: RgbaColor) =>
   `#${color
@@ -136,8 +121,7 @@ const fallbackFontFace = (value?: string): FontFaceInfo | undefined => {
   }
 }
 
-const hasExplicitFontFamilies = (style?: TextStyle) =>
-  (style?.fontFamilies?.length ?? 0) > 0
+const hasExplicitFontFamilies = (style?: TextStyle) => (style?.fontFamilies?.length ?? 0) > 0
 
 const normalizeEffect = (effect?: Partial<RenderEffect>): RenderEffect => ({
   italic: effect?.italic ?? false,
@@ -183,7 +167,8 @@ const resolveEffectiveTextAlign = (
     return block.style.textAlign
   }
 
-  if (block?.translation && LATIN_ONLY_PATTERN.test(block.translation)) {
+  if (block?.translation) {
+    // Default to Center for all translated scripts to match speech bubble aesthetics.
     return 'center'
   }
 
@@ -220,29 +205,23 @@ export function RenderControlsPanel() {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
   const selectedBlock =
-    selectedBlockIndex !== undefined
-      ? textBlocks[selectedBlockIndex]
-      : undefined
-  const selectedBlockHasExplicitFont = hasExplicitFontFamilies(
-    selectedBlock?.style,
-  )
+    selectedBlockIndex !== undefined ? textBlocks[selectedBlockIndex] : undefined
+  const selectedBlockHasExplicitFont = hasExplicitFontFamilies(selectedBlock?.style)
   const firstBlock = textBlocks[0]
   const hasBlocks = textBlocks.length > 0
   const fontCandidates = uniqueFontFaces(
     [
       ...sortedFonts,
       ...(documentFont ? [fallbackFontFace(documentFont)] : []),
-      ...(selectedBlock?.style?.fontFamilies
-        ?.slice(0, 1)
-        ?.map(fallbackFontFace) ?? []),
-      ...(firstBlock?.style?.fontFamilies?.slice(0, 1)?.map(fallbackFontFace) ??
-        []),
+      ...(selectedBlock?.style?.fontFamilies?.slice(0, 1)?.map(fallbackFontFace) ?? []),
+      ...(firstBlock?.style?.fontFamilies?.slice(0, 1)?.map(fallbackFontFace) ?? []),
       ...DEFAULT_FONT_FACES,
     ].filter((value): value is FontFaceInfo => !!value),
   )
-  const fallbackFontFaces =
-    fontCandidates.length > 0 ? fontCandidates : DEFAULT_FONT_FACES
-  const fallbackColor = firstBlock?.style?.color ?? DEFAULT_COLOR
+  const fallbackFontFaces = fontCandidates.length > 0 ? fontCandidates : DEFAULT_FONT_FACES
+  const fallbackColor = firstBlock
+    ? resolveStyleColor(firstBlock.style, firstBlock, DEFAULT_COLOR)
+    : DEFAULT_COLOR
   const fontOptions = fontCandidates
   const currentFontCandidate =
     selectedBlock?.style?.fontFamilies?.[0] ??
@@ -250,18 +229,14 @@ export function RenderControlsPanel() {
     firstBlock?.style?.fontFamilies?.[0] ??
     (hasBlocks ? fallbackFontFaces[0]?.postScriptName : '')
   const currentFontFace =
-    findFontFace(fontOptions, currentFontCandidate) ??
-    fallbackFontFace(currentFontCandidate)
+    findFontFace(fontOptions, currentFontCandidate) ?? fallbackFontFace(currentFontCandidate)
   const currentFont = currentFontFace?.postScriptName ?? ''
   const currentFontFamilyName = currentFontFace?.familyName
-  const currentEffect = normalizeEffect(
-    selectedBlock?.style?.effect ?? renderEffect,
-  )
-  const currentStroke = normalizeStroke(
-    selectedBlock?.style?.stroke ?? renderStroke,
-  )
-  const currentColor =
-    selectedBlock?.style?.color ?? (hasBlocks ? fallbackColor : DEFAULT_COLOR)
+  const currentEffect = normalizeEffect(selectedBlock?.style?.effect ?? renderEffect)
+  const currentStroke = normalizeStroke(selectedBlock?.style?.stroke ?? renderStroke)
+  const currentColor = selectedBlock
+    ? resolveStyleColor(selectedBlock.style, selectedBlock, fallbackColor)
+    : fallbackColor
   const currentColorHex = colorToHex(currentColor)
   const currentStrokeColorHex = colorToHex(currentStroke.color)
   const currentStrokeWidth = currentStroke.widthPx ?? DEFAULT_STROKE_WIDTH
@@ -276,9 +251,7 @@ export function RenderControlsPanel() {
   const strokeColorLabel = t('render.strokeColorLabel')
   const strokeWidthLabel = t('render.strokeWidthLabel')
   const alignLabel = t('render.alignLabel')
-  const currentTextAlign = resolveEffectiveTextAlign(
-    selectedBlock ?? firstBlock,
-  )
+  const currentTextAlign = resolveEffectiveTextAlign(selectedBlock ?? firstBlock)
   const scopeLabel =
     selectedBlockIndex !== undefined
       ? t('render.fontScopeBlockIndex', {
@@ -394,14 +367,9 @@ export function RenderControlsPanel() {
     void updateTextBlocks(nextBlocks)
   }
 
-  const mergeFontFamilies = (
-    nextFont: string,
-    current: string[] | undefined,
-  ) => {
+  const mergeFontFamilies = (nextFont: string, current: string[] | undefined) => {
     const base = (
-      current?.length
-        ? current
-        : fallbackFontFaces.map((font) => font.postScriptName)
+      current?.length ? current : fallbackFontFaces.map((font) => font.postScriptName)
     ).map((family) => normalizeFontValue(fontOptions, family) ?? family)
     return [nextFont, ...base.filter((family) => family !== nextFont)]
   }
@@ -531,10 +499,10 @@ export function RenderControlsPanel() {
       {/* Font + Color */}
       <div className='flex flex-col gap-0.5'>
         <div className='flex items-baseline justify-between'>
-          <span className='text-muted-foreground text-[10px] font-medium uppercase'>
+          <span className='text-[10px] font-medium text-muted-foreground uppercase'>
             {fontLabel}
           </span>
-          <span className='text-muted-foreground text-[10px] font-medium uppercase'>
+          <span className='text-[10px] font-medium text-muted-foreground uppercase'>
             {t('render.fontColorLabel')}
           </span>
         </div>
@@ -547,20 +515,14 @@ export function RenderControlsPanel() {
               disabled={fontOptions.length === 0}
               placeholder={t('render.fontPlaceholder')}
               triggerStyle={
-                currentFontFamilyName
-                  ? { fontFamily: currentFontFamilyName }
-                  : undefined
+                currentFontFamilyName ? { fontFamily: currentFontFamilyName } : undefined
               }
               onChange={(value) => {
-                const nextFamilies = mergeFontFamilies(
-                  value,
-                  selectedBlock?.style?.fontFamilies,
-                )
+                const nextFamilies = mergeFontFamilies(value, selectedBlock?.style?.fontFamilies)
                 // Only persist a block override when the block already has one.
                 // Otherwise keep the block inheriting the document default.
                 if (selectedBlockHasExplicitFont) {
-                  if (applyStyleToSelected({ fontFamilies: nextFamilies }))
-                    return
+                  if (applyStyleToSelected({ fontFamilies: nextFamilies })) return
                 }
                 updateDocumentDefaultFont(value)
               }}
@@ -569,7 +531,7 @@ export function RenderControlsPanel() {
           {selectedBlockHasExplicitFont ? (
             <button
               type='button'
-              className='text-muted-foreground hover:text-foreground text-[9px]'
+              className='text-[9px] text-muted-foreground hover:text-foreground'
               onClick={() => applyStyleToSelected({ fontFamilies: [] })}
               title='Reset to document default'
             >
@@ -596,17 +558,17 @@ export function RenderControlsPanel() {
 
       {/* Size / Effect / Align */}
       <div className='grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-end gap-x-2'>
-        <span className='text-muted-foreground text-[10px] font-medium uppercase'>
+        <span className='text-[10px] font-medium text-muted-foreground uppercase'>
           {fontSizeLabel}
         </span>
-        <span className='text-muted-foreground text-[10px] font-medium uppercase'>
+        <span className='text-[10px] font-medium text-muted-foreground uppercase'>
           {effectLabel}
         </span>
-        <span className='text-muted-foreground text-[10px] font-medium uppercase'>
+        <span className='text-[10px] font-medium text-muted-foreground uppercase'>
           {alignLabel}
         </span>
 
-        <div className='border-input bg-background flex min-w-0 items-center rounded-md border shadow-xs'>
+        <div className='flex min-w-0 items-center rounded-md border border-input bg-background shadow-xs'>
           <Button
             type='button'
             variant='ghost'
@@ -630,9 +592,7 @@ export function RenderControlsPanel() {
             className='h-7 min-w-0 flex-1 [appearance:textfield] rounded-none border-0 px-1 text-center text-xs shadow-none focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
             data-testid='render-font-size'
             disabled={selectedBlockIndex === undefined}
-            value={
-              currentFontSize !== undefined ? Math.round(currentFontSize) : ''
-            }
+            value={currentFontSize !== undefined ? Math.round(currentFontSize) : ''}
             placeholder='auto'
             onChange={(event) => {
               const parsed = Number.parseInt(event.target.value, 10)
@@ -648,10 +608,7 @@ export function RenderControlsPanel() {
             className='size-7 shrink-0 rounded-l-none border-l'
             disabled={selectedBlockIndex === undefined}
             onClick={() => {
-              const next = Math.min(
-                300,
-                Math.round((currentFontSize ?? 16) + 1),
-              )
+              const next = Math.min(300, Math.round((currentFontSize ?? 16) + 1))
               applyStyleToSelected({ fontSize: next })
             }}
           >
@@ -674,7 +631,7 @@ export function RenderControlsPanel() {
                     className={cn(
                       'size-7 shrink-0',
                       active &&
-                        'bg-primary text-primary-foreground border-primary hover:bg-primary/90',
+                        'border-primary bg-primary text-primary-foreground hover:bg-primary/90',
                     )}
                     onClick={() => {
                       const nextEffect = {
@@ -713,11 +670,10 @@ export function RenderControlsPanel() {
                     className={cn(
                       'size-7 shrink-0',
                       active &&
-                        'bg-primary text-primary-foreground border-primary hover:bg-primary/90',
+                        'border-primary bg-primary text-primary-foreground hover:bg-primary/90',
                     )}
                     onClick={() => {
-                      if (applyStyleToSelected({ textAlign: item.value }))
-                        return
+                      if (applyStyleToSelected({ textAlign: item.value })) return
                       applyStyleToAll({ textAlign: item.value })
                     }}
                   >
@@ -735,7 +691,7 @@ export function RenderControlsPanel() {
 
       {/* Border / Stroke */}
       <div className='flex flex-col gap-0.5'>
-        <span className='text-muted-foreground text-[10px] font-medium uppercase'>
+        <span className='text-[10px] font-medium text-muted-foreground uppercase'>
           {strokeLabel}
         </span>
         <div className='flex min-w-0 items-center gap-1'>
@@ -749,7 +705,7 @@ export function RenderControlsPanel() {
                 className={cn(
                   'size-7 shrink-0',
                   currentStroke.enabled &&
-                    'bg-primary text-primary-foreground border-primary hover:bg-primary/90',
+                    'border-primary bg-primary text-primary-foreground hover:bg-primary/90',
                 )}
                 onClick={() =>
                   applyStrokeSetting({
@@ -792,16 +748,14 @@ export function RenderControlsPanel() {
             </TooltipContent>
           </Tooltip>
 
-          <div className='border-input bg-background flex min-w-0 flex-1 items-center rounded-md border shadow-xs'>
+          <div className='flex min-w-0 flex-1 items-center rounded-md border border-input bg-background shadow-xs'>
             <Button
               type='button'
               variant='ghost'
               size='icon-sm'
               aria-label={`${strokeWidthLabel} -`}
               className='size-7 shrink-0 rounded-r-none border-r'
-              onClick={() =>
-                updateStrokeWidth(currentStrokeWidth - STROKE_WIDTH_STEP)
-              }
+              onClick={() => updateStrokeWidth(currentStrokeWidth - STROKE_WIDTH_STEP)}
             >
               <MinusIcon className='size-3' />
             </Button>
@@ -815,9 +769,7 @@ export function RenderControlsPanel() {
               className='h-7 min-w-0 flex-1 [appearance:textfield] rounded-none border-0 px-1 text-center text-xs shadow-none focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
               data-testid='render-stroke-width'
               value={
-                Number.isFinite(currentStrokeWidth)
-                  ? currentStrokeWidth
-                  : DEFAULT_STROKE_WIDTH
+                Number.isFinite(currentStrokeWidth) ? currentStrokeWidth : DEFAULT_STROKE_WIDTH
               }
               onChange={(event) => {
                 const parsed = Number.parseFloat(event.target.value)
@@ -832,9 +784,7 @@ export function RenderControlsPanel() {
               size='icon-sm'
               aria-label={`${strokeWidthLabel} +`}
               className='size-7 shrink-0 rounded-l-none border-l'
-              onClick={() =>
-                updateStrokeWidth(currentStrokeWidth + STROKE_WIDTH_STEP)
-              }
+              onClick={() => updateStrokeWidth(currentStrokeWidth + STROKE_WIDTH_STEP)}
             >
               <PlusIcon className='size-3' />
             </Button>

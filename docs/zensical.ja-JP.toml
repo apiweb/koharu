@@ -17,6 +17,7 @@ nav = [
   {"ハウツー" = [
     "how-to/index.md",
     "how-to/install-koharu.md",
+    "how-to/runtime-and-model-downloads.md",
     "how-to/contributing.md",
     "how-to/run-gui-headless-and-mcp.md",
     "how-to/configure-mcp-clients.md",
@@ -63,6 +64,11 @@ lang = "ja-JP"
 name = "简体中文"
 link = "/zh-CN/"
 lang = "zh-CN"
+
+[[project.extra.alternate]]
+name = "Português (Brasil)"
+link = "/pt-BR/"
+lang = "pt-BR"
 
 [[project.extra.social]]
 icon = "fontawesome/brands/github"

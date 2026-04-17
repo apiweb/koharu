@@ -1,30 +1,17 @@
 'use client'
 
+import { MousePointer, VectorSquare, Brush, Bandage, Eraser } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  MousePointer,
-  VectorSquare,
-  Brush,
-  Bandage,
-  Eraser,
-} from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import { ColorPicker } from '@/components/ui/color-picker'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Slider } from '@/components/ui/slider'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditorUiStore } from '@/lib/stores/editorUiStore'
 import { usePreferencesStore } from '@/lib/stores/preferencesStore'
 import { ToolMode } from '@/types'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { Slider } from '@/components/ui/slider'
-import { Button } from '@/components/ui/button'
-import { ColorPicker } from '@/components/ui/color-picker'
 
 type ModeDefinition = {
   value: ToolMode
@@ -69,10 +56,11 @@ const MODES: ModeDefinition[] = [
 export function ToolRail() {
   const mode = useEditorUiStore((state) => state.mode)
   const setMode = useEditorUiStore((state) => state.setMode)
+  const shortcuts = usePreferencesStore((state) => state.shortcuts)
   const { t } = useTranslation()
 
   return (
-    <div className='border-border bg-card flex w-11 flex-col border-r'>
+    <div className='flex w-11 flex-col border-r border-border bg-card'>
       <div className='flex flex-1 flex-col items-center gap-1 py-2'>
         {MODES.map((item) => {
           const label = t(item.labelKey)
@@ -99,14 +87,16 @@ export function ToolRail() {
                   data-testid={item.testId}
                   data-active={item.value === mode}
                   onClick={() => setMode(item.value)}
-                  className='text-muted-foreground data-[active=true]:border-primary data-[active=true]:bg-accent data-[active=true]:text-primary border border-transparent'
+                  className='border border-transparent text-muted-foreground data-[active=true]:border-primary data-[active=true]:bg-accent data-[active=true]:text-primary'
                   aria-label={label}
                 >
                   <item.icon className='h-4 w-4' />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side='right' sideOffset={8}>
-                {label}
+                {shortcuts[item.value as keyof typeof shortcuts]
+                  ? `${label} (${shortcuts[item.value as keyof typeof shortcuts].toUpperCase()})`
+                  : label}
               </TooltipContent>
             </Tooltip>
           )
@@ -129,6 +119,7 @@ function BrushToolWithPopover({
 }) {
   const {
     brushConfig: { size: brushSize, color: brushColor },
+    shortcuts,
     setBrushConfig,
   } = usePreferencesStore()
   const { t } = useTranslation()
@@ -144,7 +135,7 @@ function BrushToolWithPopover({
               data-testid={item.testId}
               data-active={isActive}
               onClick={onSelect}
-              className='text-muted-foreground data-[active=true]:border-primary data-[active=true]:bg-accent data-[active=true]:text-primary border border-transparent'
+              className='border border-transparent text-muted-foreground data-[active=true]:border-primary data-[active=true]:bg-accent data-[active=true]:text-primary'
               aria-label={label}
             >
               <item.icon className='h-4 w-4' />
@@ -152,34 +143,42 @@ function BrushToolWithPopover({
           </PopoverTrigger>
         </TooltipTrigger>
         <TooltipContent side='right' sideOffset={8}>
-          {label}
+          {shortcuts[item.value as keyof typeof shortcuts]
+            ? `${label} (${shortcuts[item.value as keyof typeof shortcuts].toUpperCase()})`
+            : label}
         </TooltipContent>
       </Tooltip>
       <PopoverContent side='right' align='start' className='w-56'>
         <div className='space-y-4 text-sm'>
           <div className='space-y-2'>
-            <p className='text-muted-foreground text-xs font-medium uppercase'>
+            <p className='text-xs font-medium text-muted-foreground uppercase'>
               {t('toolbar.brushSize')}
             </p>
             <div className='flex items-center gap-2'>
               <Slider
                 data-testid='brush-size-slider'
-                className='[&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:border-primary [&_[data-slot=slider-thumb]]:bg-primary [&_[data-slot=slider-track]]:bg-primary/20 flex-1 [&_[data-slot=slider-thumb]]:size-3'
+                className='flex-1 [&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:size-3 [&_[data-slot=slider-thumb]]:border-primary [&_[data-slot=slider-thumb]]:bg-primary [&_[data-slot=slider-track]]:bg-primary/20'
                 min={8}
                 max={128}
                 step={4}
                 value={[brushSize]}
-                onValueChange={(vals) =>
-                  setBrushConfig({ size: vals[0] ?? brushSize })
-                }
+                onValueChange={(vals) => setBrushConfig({ size: vals[0] ?? brushSize })}
               />
-              <span className='text-muted-foreground w-10 text-right tabular-nums'>
-                {brushSize}px
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className='w-10 cursor-help text-right text-muted-foreground tabular-nums'>
+                    {brushSize}px
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side='bottom'>
+                  {t('toolbar.brushSize')} ({shortcuts.decreaseBrushSize}{' '}
+                  {shortcuts.increaseBrushSize})
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
           <div className='space-y-2'>
-            <p className='text-muted-foreground text-xs font-medium uppercase'>
+            <p className='text-xs font-medium text-muted-foreground uppercase'>
               {t('toolbar.brushColor')}
             </p>
             <div className='flex items-center gap-2'>
@@ -193,9 +192,7 @@ function BrushToolWithPopover({
                 inputTestId='brush-color-input'
                 pickButtonTestId='brush-color-pick'
               />
-              <span className='text-muted-foreground text-xs'>
-                {brushColor}
-              </span>
+              <span className='text-xs text-muted-foreground'>{brushColor}</span>
             </div>
           </div>
         </div>

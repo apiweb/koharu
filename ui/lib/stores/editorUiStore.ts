@@ -1,7 +1,7 @@
 'use client'
 
 import type { LlmTarget } from '@/lib/api/schemas'
-import { RenderEffect, RenderStroke, TextStyle, ToolMode } from '@/types'
+import { RenderEffect, RenderStroke, ToolMode } from '@/types'
 import { create } from 'zustand'
 
 // ---------------------------------------------------------------------------
