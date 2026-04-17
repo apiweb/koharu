@@ -182,6 +182,14 @@ pub struct ImportResult {
     pub documents: Vec<DocumentSummary>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportPathsRequest {
+    pub paths: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub insert_at: Option<usize>,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExportLayer {

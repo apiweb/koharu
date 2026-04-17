@@ -11,9 +11,9 @@ use axum::{
 use koharu_app::{AppResources, config as app_config, edit, engine, io, llm, pipeline};
 use koharu_core::{
     CreateTextBlock, Document, DocumentDetail, DocumentSummary, DownloadState, ExportLayer,
-    ExportResult, FontFaceInfo, JobState, LlmCatalog, LlmLoadRequest, LlmState, MaskRegionRequest,
-    MetaInfo, PipelineJobRequest, RenderRequest, ReorderRequest, TextBlock, TextBlockDetail,
-    TextBlockInput, TextBlockPatch, TranslateRequest,
+    ExportResult, FontFaceInfo, ImportPathsRequest, JobState, LlmCatalog, LlmLoadRequest,
+    LlmState, MaskRegionRequest, MetaInfo, PipelineJobRequest, RenderRequest, ReorderRequest,
+    TextBlock, TextBlockDetail, TextBlockInput, TextBlockPatch, TranslateRequest,
 };
 use koharu_psd::{PsdExportOptions, TextLayerMode};
 use serde::{Deserialize, Serialize};
@@ -41,6 +41,7 @@ impl ApiState {
 pub fn api() -> (axum::Router<ApiState>, utoipa::openapi::OpenApi) {
     OpenApiRouter::default()
         .routes(routes!(list_documents, import_documents))
+        .routes(routes!(import_from_paths))
         .routes(routes!(reorder_documents))
         .routes(routes!(get_document))
         .routes(routes!(update_document_style))
@@ -623,6 +624,37 @@ async fn import_documents(
             io::add_documents(resources.clone(), payload).await?;
         }
     }
+
+    let documents = resources.storage.list_pages().await;
+
+    Ok(Json(koharu_core::ImportResult {
+        total_count: documents.len(),
+        documents,
+    }))
+}
+
+#[utoipa::path(
+    post,
+    path = "/documents/import-paths",
+    operation_id = "importFromPaths",
+    tag = "documents",
+    request_body(content = koharu_core::ImportPathsRequest, content_type = "application/json"),
+    responses(
+        (status = 200, body = koharu_core::ImportResult),
+        (status = 400, body = ApiError),
+        (status = 503, body = ApiError),
+    ),
+)]
+#[tracing::instrument(level = "info", skip_all)]
+async fn import_from_paths(
+    State(state): State<ApiState>,
+    Json(body): Json<ImportPathsRequest>,
+) -> ApiResult<Json<koharu_core::ImportResult>> {
+    let resources = state.resources()?;
+
+    io::import_from_paths(resources.clone(), body.paths, body.insert_at)
+        .await
+        .map_err(|e| ApiError::bad_request(e.to_string()))?;
 
     let documents = resources.storage.list_pages().await;
 

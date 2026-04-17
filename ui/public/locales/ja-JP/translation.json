@@ -66,6 +66,10 @@
       "description": "ドラッグ＆ドロップでページの順番を変更します。"
     }
   },
+  "dropZone": {
+    "noFilePaths": "ドラッグされたファイルを読み込めませんでした。もう一度お試しください。",
+    "noValidFiles": "対応する画像ファイルが見つかりませんでした。PNG、JPG、または WebP ファイルをドラッグしてください。"
+  },
   "panels": {
     "processing": "処理",
     "mask": "マスク",

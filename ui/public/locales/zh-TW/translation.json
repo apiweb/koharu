@@ -66,6 +66,10 @@
       "description": "拖放頁面以重新排列順序。"
     }
   },
+  "dropZone": {
+    "noFilePaths": "無法匯入拖放的檔案。請重試。",
+    "noValidFiles": "未找到支援的影像檔案。請拖放 PNG、JPG 或 WebP 檔案。"
+  },
   "panels": {
     "processing": "處理",
     "mask": "遮罩",

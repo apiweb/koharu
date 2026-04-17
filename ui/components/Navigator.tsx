@@ -5,11 +5,14 @@ import { LayoutGridIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { InsertionIndicator } from '@/components/DropZone'
 import { PageManagerDialog } from '@/components/PageManagerDialog'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 import { useListDocuments, getGetDocumentThumbnailUrl } from '@/lib/api/documents/documents'
 import { useEditorUiStore } from '@/lib/stores/editorUiStore'
+import { useNavigatorFileDrop } from '@/hooks/useFileDrop'
 
 const THUMBNAIL_DPR =
   typeof window !== 'undefined' ? Math.min(Math.ceil(window.devicePixelRatio || 1), 3) : 2
@@ -24,9 +27,17 @@ export function Navigator() {
   const currentDocumentId = useEditorUiStore((state) => state.currentDocumentId)
   const setCurrentDocumentId = useEditorUiStore((state) => state.setCurrentDocumentId)
   const currentDocumentIndex = documents.findIndex((d) => d.id === currentDocumentId)
+  const panelRef = useRef<HTMLDivElement | null>(null)
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const { t } = useTranslation()
   const [pageManagerOpen, setPageManagerOpen] = useState(false)
+
+  const { isDragging, insertIndex } = useNavigatorFileDrop({
+    panelRef,
+    viewportRef,
+    rowHeight: ROW_HEIGHT,
+    totalPages,
+  })
 
   const virtualizer = useVirtualizer({
     count: totalPages,
@@ -37,9 +48,13 @@ export function Navigator() {
 
   return (
     <div
+      ref={panelRef}
       data-testid='navigator-panel'
       data-total-pages={totalPages}
-      className='flex h-full min-h-0 w-full flex-col border-r bg-muted/50'
+      className={cn(
+        'flex h-full min-h-0 w-full flex-col border-r bg-muted/50',
+        isDragging && 'ring-2 ring-inset ring-primary/50',
+      )}
     >
       <div className='flex items-center justify-between border-b border-border px-2 py-1.5'>
         <div>
@@ -75,7 +90,11 @@ export function Navigator() {
       </div>
 
       <ScrollArea className='min-h-0 flex-1' viewportRef={viewportRef}>
-        <div className='relative w-full' style={{ height: virtualizer.getTotalSize() }}>
+        <div
+          className='relative w-full'
+          style={{ height: virtualizer.getTotalSize() + (isDragging ? ROW_HEIGHT : 0) }}
+        >
+          <InsertionIndicator insertIndex={insertIndex} rowHeight={ROW_HEIGHT} />
           {virtualizer.getVirtualItems().map((virtualRow) => {
             const doc = documents[virtualRow.index]
             return (

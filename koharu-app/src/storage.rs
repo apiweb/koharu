@@ -273,6 +273,7 @@ impl Storage {
         &self,
         files: Vec<koharu_core::FileEntry>,
         replace: bool,
+        insert_at: Option<usize>,
     ) -> Result<Vec<Document>> {
         use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
@@ -304,16 +305,53 @@ impl Storage {
         if replace {
             project.pages.clear();
         }
-        let next_order = project
-            .pages
-            .iter()
-            .map(|p| p.order)
-            .max()
-            .unwrap_or(0)
-            .saturating_add(1);
+
+        project.pages.sort_by(|a, b| {
+            a.order
+                .cmp(&b.order)
+                .then_with(|| natord::compare(&a.name, &b.name))
+                .then_with(|| a.id.cmp(&b.id))
+        });
+
+        let mut seen_ids: std::collections::HashSet<String> =
+            project.pages.iter().map(|p| p.id.clone()).collect();
+        let pages: Vec<Document> = pages
+            .into_iter()
+            .filter(|p| seen_ids.insert(p.id.clone()))
+            .collect();
+
+        if pages.is_empty() {
+            return Ok(Vec::new());
+        }
+
         let imported = pages.clone();
-        project.pages.extend(pages);
-        assign_missing_orders(&mut project.pages, next_order);
+        let new_count = pages.len() as u32;
+
+        if let Some(idx) = insert_at {
+            let idx = idx.min(project.pages.len());
+
+            for page in project.pages.iter_mut().skip(idx) {
+                page.order = page.order.saturating_add(new_count);
+            }
+
+            let start_order = (idx as u32) + 1;
+            let mut ordered_pages = pages;
+            for (offset, page) in ordered_pages.iter_mut().enumerate() {
+                page.order = start_order + offset as u32;
+            }
+            project.pages.extend(ordered_pages);
+        } else {
+            let next_order = project
+                .pages
+                .iter()
+                .map(|p| p.order)
+                .max()
+                .unwrap_or(0)
+                .saturating_add(1);
+            project.pages.extend(pages);
+            assign_missing_orders(&mut project.pages, next_order);
+        }
+
         project.pages.sort_by(|a, b| {
             a.order
                 .cmp(&b.order)

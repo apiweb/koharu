@@ -66,6 +66,10 @@
       "description": "드래그 앤 드롭으로 페이지 순서를 변경하세요."
     }
   },
+  "dropZone": {
+    "noFilePaths": "드래그한 파일을 가져올 수 없습니다. 다시 시도하세요.",
+    "noValidFiles": "지원되는 이미지 파일을 찾을 수 없습니다. PNG, JPG 또는 WebP 파일을 드래그하세요."
+  },
   "panels": {
     "processing": "처리",
     "mask": "마스크",

@@ -67,6 +67,10 @@
       "description": "Arraste e solte as páginas para reordená-las."
     }
   },
+  "dropZone": {
+    "noFilePaths": "Não foi possível importar os arquivos arrastados. Por favor, tente novamente.",
+    "noValidFiles": "Nenhum arquivo de imagem suportado foi encontrado. Por favor, arraste arquivos PNG, JPG ou WebP."
+  },
   "panels": {
     "processing": "Processamento",
     "mask": "Máscara",

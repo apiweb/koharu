@@ -6,6 +6,7 @@ import {
   getGetDocumentQueryKey,
   importDocuments,
 } from '@/lib/api/documents/documents'
+import { importFromPaths } from '@/lib/api/documents/importFromPaths'
 import { exportDocument, batchExport } from '@/lib/api/exports/exports'
 import { startPipeline, cancelJob, getJob } from '@/lib/api/jobs/jobs'
 import { loadLlm, unloadLlm, getLlm, getGetLlmQueryKey } from '@/lib/api/llm/llm'
@@ -79,6 +80,11 @@ export type ProcessingEvent =
       mode: 'replace' | 'append'
       source: 'files' | 'folder'
     }
+  | {
+      type: 'START_DROP_IMPORT_PATHS'
+      paths: string[]
+      insertAt?: number
+    }
   | { type: 'START_DETECT'; documentId: string }
   | { type: 'START_RECOGNIZE'; documentId: string }
   | { type: 'START_INPAINT'; documentId: string }
@@ -143,6 +149,13 @@ const importActor = fromPromise<
   const picked = input.source === 'folder' ? await pickImageFolderFiles() : await pickImageFiles()
   if (!picked) throw new Error('__CANCELLED__')
   return importSelectedDocuments(picked, input.mode)
+})
+
+const dropImportPathsActor = fromPromise<
+  ImportResult,
+  { paths: string[]; insertAt?: number }
+>(async ({ input }) => {
+  return importFromPaths({ paths: input.paths, insertAt: input.insertAt })
 })
 
 const detectActor = fromPromise<void, { documentId: string }>(async ({ input }) => {
@@ -288,6 +301,7 @@ export const processingMachine = setup({
   },
   actors: {
     importActor,
+    dropImportPathsActor,
     detectActor,
     recognizeActor,
     inpaintActor,
@@ -438,6 +452,10 @@ export const processingMachine = setup({
           target: 'importing',
           actions: ['resetContext'],
         },
+        START_DROP_IMPORT_PATHS: {
+          target: 'droppingFilePaths',
+          actions: ['resetContext'],
+        },
         START_DETECT: {
           target: 'detecting',
           actions: ['resetContext', 'setDocumentIdFromEvent'],
@@ -494,6 +512,35 @@ export const processingMachine = setup({
         input: ({ event }) => {
           const e = event as Extract<ProcessingEvent, { type: 'START_IMPORT' }>
           return { mode: e.mode, source: e.source }
+        },
+        onDone: {
+          target: 'idle',
+          actions: [
+            'invalidateDocumentList',
+            ({ event }) => {
+              const result = event.output as ImportResult
+              const firstId = result.documents?.[0]?.id
+              if (firstId) {
+                useEditorUiStore.getState().setCurrentDocumentId(firstId)
+              }
+            },
+          ],
+        },
+        onError: {
+          target: 'idle',
+          actions: ['setImportError', 'surfaceError'],
+        },
+      },
+    },
+
+    droppingFilePaths: {
+      entry: 'setProgressBarNormal',
+      exit: 'clearProgressBar',
+      invoke: {
+        src: 'dropImportPathsActor',
+        input: ({ event }) => {
+          const e = event as Extract<ProcessingEvent, { type: 'START_DROP_IMPORT_PATHS' }>
+          return { paths: e.paths, insertAt: e.insertAt }
         },
         onDone: {
           target: 'idle',

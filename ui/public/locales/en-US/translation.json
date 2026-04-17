@@ -67,6 +67,10 @@
       "description": "Drag and drop pages to reorder them."
     }
   },
+  "dropZone": {
+    "noFilePaths": "Could not import the dragged files. Please try again.",
+    "noValidFiles": "No supported image files found. Please drag PNG, JPG, or WebP files."
+  },
   "panels": {
     "processing": "Processing",
     "mask": "Mask",

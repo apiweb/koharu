@@ -66,6 +66,10 @@
       "description": "拖放页面以重新排列顺序。"
     }
   },
+  "dropZone": {
+    "noFilePaths": "无法导入拖放的文件。请重试。",
+    "noValidFiles": "未找到支持的图像文件。请拖放 PNG、JPG 或 WebP 文件。"
+  },
   "panels": {
     "processing": "处理",
     "mask": "遮罩",

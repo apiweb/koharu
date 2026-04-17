@@ -66,6 +66,10 @@
       "description": "Sayfaları yeniden sıralamak için sürükleyip bırakın."
     }
   },
+  "dropZone": {
+    "noFilePaths": "Sürüklenen dosyalar içe aktarılamadı. Lütfen tekrar deneyin.",
+    "noValidFiles": "Desteklenen görüntü dosyası bulunamadı. Lütfen PNG, JPG veya WebP dosyaları sürükleyin."
+  },
   "panels": {
     "processing": "İşleme",
     "mask": "Maske",
