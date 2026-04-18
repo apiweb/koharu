@@ -72,7 +72,10 @@ pub async fn open_documents(
         anyhow::bail!("No files uploaded");
     }
 
-    let pages = state.storage.import_files(payload.files, true, None).await?;
+    let pages = state
+        .storage
+        .import_files(payload.files, true, None)
+        .await?;
     Ok(pages.len())
 }
 
@@ -85,7 +88,10 @@ pub async fn add_documents(
         anyhow::bail!("No files uploaded");
     }
 
-    let _new_pages = state.storage.import_files(payload.files, false, None).await?;
+    let _new_pages = state
+        .storage
+        .import_files(payload.files, false, None)
+        .await?;
     Ok(state.storage.page_count().await)
 }
 
@@ -231,10 +237,7 @@ pub async fn import_from_paths(
         anyhow::bail!("No valid image files found in the provided paths");
     }
 
-    let imported = state
-        .storage
-        .import_files(files, false, insert_at)
-        .await?;
+    let imported = state.storage.import_files(files, false, insert_at).await?;
 
     Ok(imported.len())
 }
